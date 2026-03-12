@@ -452,6 +452,12 @@ async function pushToRepo(owner, repo, branch, token, projects) {
     const detail = await res.text();
     throw new Error(`Push failed (${res.status}): ${detail.slice(0, 180)}`);
   }
+
+  const payload = await res.json();
+  return {
+    commitSha: payload?.commit?.sha || "",
+    commitUrl: payload?.commit?.html_url || "",
+  };
 }
 
 function requestTaskManagerAccess() {
@@ -624,7 +630,8 @@ function wireCms(win) {
     );
     refreshSelect(state.projects.length - 1);
     renderIcons();
-    setCmsMessage(msg, "Project added.", "ok");
+    saveOverride();
+    setCmsMessage(msg, "Project added and saved locally.", "ok");
   });
 
   el("save-btn").addEventListener("click", () => {
@@ -640,7 +647,8 @@ function wireCms(win) {
     state.projects[state.cmsSelection] = project;
     refreshSelect(state.cmsSelection);
     renderIcons();
-    setCmsMessage(msg, "Project saved.", "ok");
+    saveOverride();
+    setCmsMessage(msg, "Project saved locally.", "ok");
   });
 
   el("delete-btn").addEventListener("click", () => {
@@ -651,7 +659,8 @@ function wireCms(win) {
     state.projects.splice(state.cmsSelection, 1);
     refreshSelect(state.cmsSelection - 1);
     renderIcons();
-    setCmsMessage(msg, "Project deleted.", "ok");
+    saveOverride();
+    setCmsMessage(msg, "Project deleted and saved locally.", "ok");
   });
 
   el("local-btn").addEventListener("click", () => {
@@ -712,8 +721,21 @@ function wireCms(win) {
 
     setCmsMessage(msg, "Pushing to GitHub...", "");
     try {
-      await pushToRepo(owner, repo, branch, token, normalized);
-      setCmsMessage(msg, `Pushed data/projects.json to repo. ${validation.message}`, "ok");
+      state.projects = normalized;
+      saveOverride();
+      const pushed = await pushToRepo(owner, repo, branch, token, normalized);
+      const pulled = await pullFromRepo(owner, repo, branch);
+      state.projects = pulled;
+      saveOverride();
+      refreshSelect(state.cmsSelection ?? 0);
+      renderIcons();
+
+      const commitNote = pushed.commitUrl
+        ? ` Commit: ${pushed.commitUrl}`
+        : pushed.commitSha
+          ? ` Commit SHA: ${pushed.commitSha.slice(0, 7)}`
+          : "";
+      setCmsMessage(msg, `Pushed and reloaded from GitHub (${branch}). ${validation.message}.${commitNote}`, "ok");
     } catch (error) {
       if (/401|403/.test(error.message)) {
         setCmsMessage(msg, "Push failed: token missing repo write permission.", "error");
