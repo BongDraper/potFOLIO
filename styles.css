@@ -152,6 +152,19 @@ body {
   margin-bottom: 10px;
 }
 
+.project-media {
+  margin-top: 12px;
+  border: 1px solid #8f8a7a;
+  background: #111;
+}
+
+.project-media iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  border: 0;
+}
+
 #selection-box {
   position: absolute;
   border: 1px dashed #c9e5ff;

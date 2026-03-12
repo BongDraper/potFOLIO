@@ -1,6 +1,7 @@
 const DATA_URL = "data/projects.json";
 const STORAGE_KEY = "potfolio.projects.override.v2";
 const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
+const OPTIONAL_FIELDS = ["videoUrl"];
 const ROLE_NORMALIZATION_MAP = {
   creative: "Associate Creative Director",
   "campaign creative": "Campaign Creative",
@@ -62,6 +63,11 @@ function sanitizeProject(raw = {}) {
     safe[key] = typeof value === "string" ? value.trim() : "";
   }
 
+  for (const key of OPTIONAL_FIELDS) {
+    const value = raw?.[key];
+    safe[key] = typeof value === "string" ? value.trim() : "";
+  }
+
   const roleKey = safe.role.toLowerCase();
   safe.role = ROLE_NORMALIZATION_MAP[roleKey] || safe.role;
 
@@ -76,6 +82,51 @@ function sanitizeProject(raw = {}) {
 function sanitizeProjectList(payload) {
   if (!Array.isArray(payload)) return [];
   return payload.map((entry) => sanitizeProject(entry));
+}
+
+function toEmbedUrl(videoUrl) {
+  if (!videoUrl) return "";
+
+  try {
+    const parsed = new URL(videoUrl);
+    const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      const id = parsed.searchParams.get("v") || segments[segments.length - 1];
+      if (!id) return "";
+      return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+    }
+
+    if (host === "youtu.be") {
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      const id = segments[segments.length - 1];
+      if (!id) return "";
+      return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+    }
+
+    if (host === "vimeo.com") {
+      const id = parsed.pathname.split("/").filter(Boolean).find((segment) => /^\d+$/.test(segment));
+      if (!id) return "";
+      return `https://player.vimeo.com/video/${id}`;
+    }
+
+    if (host === "player.vimeo.com") {
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      const id = parts[parts.length - 1];
+      if (!id || !/^\d+$/.test(id)) return "";
+      return `https://player.vimeo.com/video/${id}`;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function hasValidVideo(project) {
+  if (!project.videoUrl) return true;
+  return Boolean(toEmbedUrl(project.videoUrl));
 }
 
 function encodeBase64Unicode(text) {
@@ -244,6 +295,11 @@ function createWindow(title, contentHtml, options = {}) {
 
 function projectWindow(project, projectId) {
   const safe = sanitizeProject(project);
+  const embedUrl = toEmbedUrl(safe.videoUrl);
+  const media = embedUrl
+    ? `<div class="project-media"><iframe src="${embedUrl}" title="${safe.name} video" loading="lazy" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe></div>`
+    : "";
+
   createWindow(
     `${safe.name}.txt`,
     `<div class="project-meta">
@@ -251,7 +307,7 @@ function projectWindow(project, projectId) {
       <strong>Role</strong><span>${safe.role}</span>
       <strong>Year</strong><span>${safe.year}</span>
     </div>
-    <p style="white-space: pre-line;">${safe.description}</p>`,
+    <p style="white-space: pre-line;">${safe.description}</p>${media}`,
     { key: `project-${projectId}` }
   );
 }
@@ -309,7 +365,10 @@ function renderIcons() {
 }
 
 function validProjectForSave(project) {
-  return REQUIRED_FIELDS.every((key) => typeof project[key] === "string" && project[key].trim().length > 0);
+  return (
+    REQUIRED_FIELDS.every((key) => typeof project[key] === "string" && project[key].trim().length > 0) &&
+    hasValidVideo(project)
+  );
 }
 
 function validateProjects(projects) {
@@ -320,7 +379,10 @@ function validateProjects(projects) {
   const normalized = sanitizeProjectList(projects);
   const invalidIndex = normalized.findIndex((project) => !validProjectForSave(project));
   if (invalidIndex !== -1) {
-    return { ok: false, message: `Project ${invalidIndex + 1} is missing required schema fields.` };
+    return {
+      ok: false,
+      message: `Project ${invalidIndex + 1} has missing required fields or an invalid video URL (YouTube/Vimeo).`,
+    };
   }
 
   const nameSet = new Set();
@@ -465,6 +527,7 @@ async function openTaskManager() {
       <label>Role <input id="f-role" /></label>
       <label>Year <input id="f-year" /></label>
       <label>Description <textarea id="f-desc" rows="4"></textarea></label>
+      <label>Video URL (YouTube/Vimeo) <input id="f-video" placeholder="https://..." /></label>
       <div class="cms-actions">
         <button id="new-btn">Add Project</button>
         <button id="save-btn">Save Edit</button>
@@ -513,7 +576,7 @@ function wireCms(win) {
 
     if (!state.projects.length) {
       state.cmsSelection = null;
-      ["f-name", "f-brand", "f-role", "f-year", "f-desc"].forEach((id) => {
+      ["f-name", "f-brand", "f-role", "f-year", "f-desc", "f-video"].forEach((id) => {
         el(id).value = "";
       });
       return;
@@ -532,6 +595,7 @@ function wireCms(win) {
     el("f-role").value = project.role;
     el("f-year").value = project.year;
     el("f-desc").value = project.description;
+    el("f-video").value = project.videoUrl;
   }
 
   function readForm() {
@@ -541,6 +605,7 @@ function wireCms(win) {
       role: el("f-role").value,
       year: el("f-year").value,
       description: el("f-desc").value,
+      videoUrl: el("f-video").value,
     });
   }
 
@@ -554,6 +619,7 @@ function wireCms(win) {
         role: "Associate Creative Director",
         year: String(new Date().getFullYear()),
         description: "Describe this project.",
+        videoUrl: "",
       })
     );
     refreshSelect(state.projects.length - 1);
@@ -568,7 +634,7 @@ function wireCms(win) {
     }
     const project = readForm();
     if (!validProjectForSave(project)) {
-      setCmsMessage(msg, "All schema fields are required before saving.", "error");
+      setCmsMessage(msg, "All schema fields are required and video URL must be YouTube/Vimeo.", "error");
       return;
     }
     state.projects[state.cmsSelection] = project;
