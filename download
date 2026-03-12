@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "name": "Maximiliano (Max) Gaudelli",
+    "site": "https://www.maxgaudelli.com",
+    "status": "domain currently points to Cargo placeholder; legacy content not publicly visible"
+  },
+  "sources": [
+    "https://duckduckgo.com/html/?q=Max+Gaudelli+portfolio+projects",
+    "https://mgaudelli.medium.com"
+  ],
+  "candidate_projects": [
+    {
+      "title": "Stay Exploring — The North Face x Airbnb",
+      "source": "https://contra.com/p/WoOLmOkY-stay-exploring-the-north-face-x-airbnb",
+      "confidence": "high"
+    },
+    {
+      "title": "KDDI project page (legacy maxgaudelli.com/kddi)",
+      "source": "https://maxgaudelli.com/kddi",
+      "confidence": "medium"
+    },
+    {
+      "title": "Chubb campaign (LinkedIn post reference)",
+      "source": "https://www.linkedin.com/posts/mgaudelli_really-cool-work-for-chubb-we-did-over-at-activity-7053804775657611264-a3sK",
+      "confidence": "medium"
+    }
+  ],
+  "content_signals": {
+    "focus": [
+      "creative direction",
+      "copywriting",
+      "digital advertising",
+      "social content",
+      "AI/ML thought pieces"
+    ],
+    "medium_articles_detected": [
+      "Beneath the Desk Lamp: The Shifting Emotional Tides of Full-Time Work",
+      "AI won’t replace you, the person using it will.",
+      "Honoring Hal Finney: The Bitcoin Cypherpunk",
+      "The Impact of Machine Learning on Our Lives: A Look at Mass Adaptation",
+      "The Censorship of AI Models: A Threat to Free Speech and Innovation"
+    ]
+  },
+  "next_data_needed_from_owner": [
+    "final project list (8-12 best cases)",
+    "role per project (Copywriter/ACD/etc)",
+    "outcomes/metrics per project",
+    "asset links (images/videos/case-study decks)",
+    "resume/bio preferred version"
+  ]
+}

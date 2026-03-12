@@ -1,0 +1,123 @@
+:root {
+  --xp-blue: #0058ee;
+  --xp-blue-2: #3b8dff;
+  --xp-bar: #245edb;
+  --window-bg: #ece9d8;
+  --icon-size: 32px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; font-family: Tahoma, Verdana, Arial, sans-serif; }
+body {
+  background: url('./assets/bliss.jpg') center/cover no-repeat fixed;
+  overflow: hidden;
+}
+#desktop {
+  height: calc(100% - 42px);
+  padding: 12px;
+}
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 92px);
+  grid-auto-rows: 92px;
+  gap: 8px;
+  align-content: start;
+}
+.desktop-icon {
+  width: 88px;
+  height: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border: none;
+  background: transparent;
+  color: white;
+  text-shadow: 1px 1px 1px rgba(0,0,0,.7);
+  cursor: pointer;
+  padding: 4px;
+}
+.desktop-icon:focus, .desktop-icon:hover {
+  background: rgba(80,140,255,.35);
+  outline: 1px dotted #d8e7ff;
+}
+.icon-glyph {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  border-radius: 6px;
+  background: linear-gradient(145deg,#ffef96,#f9b437);
+  box-shadow: 0 1px 2px rgba(0,0,0,.4);
+  margin-bottom: 6px;
+  display: grid;
+  place-items: center;
+  color: #3b2f00;
+  font-weight: bold;
+  font-size: 16px;
+}
+.icon-label {
+  font-size: 12px;
+  line-height: 1.1;
+  text-align: center;
+  max-width: 82px;
+}
+.taskbar {
+  height: 42px;
+  background: linear-gradient(#3f88ff,#1f5fd9);
+  border-top: 1px solid #8db8ff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+}
+.start-btn {
+  border: 1px solid #2f6500;
+  border-radius: 18px;
+  background: linear-gradient(#55b136,#2f7e1f);
+  color: #fff;
+  font-weight: bold;
+  padding: 5px 14px;
+  text-transform: lowercase;
+}
+.taskbar-title { opacity: .9; }
+#clock { margin-left: auto; background: rgba(255,255,255,.15); padding: 4px 8px; border-radius: 4px; }
+.win-window {
+  position: absolute;
+  top: 80px;
+  left: 120px;
+  width: min(90vw, 760px);
+  min-height: 280px;
+  border: 1px solid #0055c8;
+  box-shadow: 0 8px 28px rgba(0,0,0,.45);
+  background: var(--window-bg);
+  z-index: 50;
+}
+.win-header {
+  background: linear-gradient(var(--xp-blue-2), var(--xp-blue));
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: move;
+}
+.win-controls button {
+  border: 1px solid #fff;
+  background: #ff5f5f;
+  color: white;
+  font-weight: bold;
+  width: 22px;
+  height: 22px;
+}
+.win-body {
+  padding: 12px;
+  max-height: calc(80vh - 40px);
+  overflow: auto;
+}
+.pm-row { display: grid; grid-template-columns: 1.2fr 1fr .8fr .6fr 2fr auto; gap: 6px; margin-bottom: 6px; }
+.pm-row input, .pm-row textarea { width: 100%; padding: 6px; font-size: 12px; }
+.pm-row textarea { min-height: 36px; }
+.pm-toolbar { display:flex; gap:8px; margin: 10px 0; flex-wrap:wrap; }
+.pm-toolbar button { padding: 6px 10px; }
+.settings { display:grid; grid-template-columns: repeat(2,minmax(220px,1fr)); gap:8px; margin:12px 0; }
+.settings input { width:100%; padding:6px; }
+.note { font-size:12px; color:#333; }
