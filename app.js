@@ -10,16 +10,42 @@ const ROLE_NORMALIZATION_MAP = {
   copywriter: "Copywriter",
 };
 
-const ICON_DATA_URI =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%2366a3ff'/%3E%3Cstop offset='1' stop-color='%233077f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23g)'/%3E%3Cpath d='M0 40h64v24H0z' fill='%2332873a'/%3E%3Cpath d='M8 42c8-8 18-10 26-8 8 2 15 8 22 16v14H8z' fill='%234aa84b'/%3E%3C/svg%3E";
+const ICONS = {
+  project:
+    "data:image/svg+xml," +
+    encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <defs>
+        <linearGradient id='folder' x1='0' y1='0' x2='0' y2='1'>
+          <stop offset='0%' stop-color='#ffd979'/>
+          <stop offset='100%' stop-color='#e6a84a'/>
+        </linearGradient>
+      </defs>
+      <path d='M5 16h21l5 6h28v28c0 3-2 5-5 5H10c-3 0-5-2-5-5V16z' fill='url(#folder)' stroke='#9a6a24' stroke-width='2'/>
+      <rect x='6' y='22' width='52' height='31' rx='4' fill='#f3be5a' stroke='#9a6a24' stroke-width='2'/>
+      <rect x='12' y='30' width='24' height='4' rx='2' fill='#fff2bf' opacity='0.75'/>
+    </svg>`),
+  taskManager:
+    "data:image/svg+xml," +
+    encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <rect x='8' y='8' width='48' height='48' rx='5' fill='#f3f3f3' stroke='#9da3ad' stroke-width='2'/>
+      <rect x='12' y='14' width='40' height='8' rx='2' fill='#3f8cff'/>
+      <rect x='14' y='28' width='6' height='20' fill='#58b957'/>
+      <rect x='24' y='34' width='6' height='14' fill='#ffd347'/>
+      <rect x='34' y='24' width='6' height='24' fill='#ff7f50'/>
+      <rect x='44' y='30' width='6' height='18' fill='#4f95ff'/>
+    </svg>`),
+};
 
 const state = {
   projects: [],
   z: 20,
   cmsSelection: null,
   selectedIconId: null,
-  lastIconClick: { id: null, ts: 0 },
   taskManagerOpening: false,
+};
+
+const WINDOW_KEYS = {
+  taskManager: "task-manager",
 };
 
 const desktop = document.getElementById("desktop");
@@ -72,19 +98,24 @@ function createIcon({ id, label, img, onOpen }) {
   btn.type = "button";
   btn.dataset.id = id;
   btn.innerHTML = `<img src="${img}" alt="" /><span>${label}</span>`;
+
   btn.addEventListener("click", (event) => {
     event.stopPropagation();
-    const now = Date.now();
-    const isRapidRepeat = state.lastIconClick.id === id && now - state.lastIconClick.ts < 450;
-    state.lastIconClick = { id, ts: now };
     selectDesktopIcon(id);
-    if (isRapidRepeat) onOpen();
   });
+
   btn.addEventListener("dblclick", (event) => {
     event.stopPropagation();
-    state.lastIconClick = { id: null, ts: 0 };
     onOpen();
   });
+
+  btn.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      onOpen();
+    }
+  });
+
   return btn;
 }
 
@@ -169,10 +200,21 @@ function renderTaskbar() {
   });
 }
 
-function createWindow(title, contentHtml) {
+function createWindow(title, contentHtml, options = {}) {
   const template = document.getElementById("project-window-template");
+  const { key = null, onClose = null } = options;
+
+  if (key) {
+    const existing = windowLayer.querySelector(`.xp-window[data-window-key="${key}"]`);
+    if (existing) {
+      bringToFront(existing);
+      return existing;
+    }
+  }
+
   const win = template.content.firstElementChild.cloneNode(true);
   win.querySelector(".window-title").textContent = title;
+  if (key) win.dataset.windowKey = key;
   win.querySelector(".window-content").innerHTML = contentHtml;
 
   const defaultRect = clampWindowToViewport(
@@ -184,10 +226,13 @@ function createWindow(title, contentHtml) {
   win.style.left = `${defaultRect.left}px`;
   win.style.top = `${defaultRect.top}px`;
 
-  win.querySelector(".close-btn").addEventListener("click", () => {
+  const closeWindow = () => {
     win.remove();
+    if (typeof onClose === "function") onClose();
     renderTaskbar();
-  });
+  };
+
+  win.querySelector(".close-btn").addEventListener("click", closeWindow);
   win.addEventListener("mousedown", () => bringToFront(win));
 
   makeDraggable(win);
@@ -197,7 +242,7 @@ function createWindow(title, contentHtml) {
   return win;
 }
 
-function projectWindow(project) {
+function projectWindow(project, projectId) {
   const safe = sanitizeProject(project);
   createWindow(
     `${safe.name}.txt`,
@@ -206,7 +251,8 @@ function projectWindow(project) {
       <strong>Role</strong><span>${safe.role}</span>
       <strong>Year</strong><span>${safe.year}</span>
     </div>
-    <p style="white-space: pre-line;">${safe.description}</p>`
+    <p style="white-space: pre-line;">${safe.description}</p>`,
+    { key: `project-${projectId}` }
   );
 }
 
@@ -245,8 +291,8 @@ function renderIcons() {
       createIcon({
         id: `project-${index}`,
         label: safe.name,
-        img: ICON_DATA_URI,
-        onOpen: () => projectWindow(safe),
+        img: ICONS.project,
+        onOpen: () => projectWindow(safe, index),
       })
     );
   });
@@ -255,7 +301,7 @@ function renderIcons() {
     createIcon({
       id: "task-manager",
       label: "Task Manager",
-      img: ICON_DATA_URI,
+      img: ICONS.taskManager,
       onOpen: openTaskManager,
     })
   );
@@ -358,17 +404,24 @@ function requestTaskManagerAccess() {
         </div>
         <p class="small" id="task-auth-msg">Password required.</p>
       </div>`;
-    const win = createWindow("Task Manager Login", html);
-    const input = win.querySelector("#task-auth-input");
-    const msg = win.querySelector("#task-auth-msg");
-    const submit = win.querySelector("#task-auth-submit");
-    const cancel = win.querySelector("#task-auth-cancel");
-
     const done = (allowed) => {
+      if (!win.isConnected) {
+        resolve(allowed);
+        return;
+      }
       win.remove();
       renderTaskbar();
       resolve(allowed);
     };
+
+    const win = createWindow("Task Manager Login", html, {
+      key: "task-manager-login",
+      onClose: () => resolve(false),
+    });
+    const input = win.querySelector("#task-auth-input");
+    const msg = win.querySelector("#task-auth-msg");
+    const submit = win.querySelector("#task-auth-submit");
+    const cancel = win.querySelector("#task-auth-cancel");
 
     submit.addEventListener("click", () => {
       if (input.value === "Bong") {
@@ -392,13 +445,17 @@ async function openTaskManager() {
   if (state.taskManagerOpening) return;
   state.taskManagerOpening = true;
 
-  const allowed = await requestTaskManagerAccess();
-  if (!allowed) {
-    state.taskManagerOpening = false;
-    return;
-  }
+  try {
+    const existing = windowLayer.querySelector(`.xp-window[data-window-key="${WINDOW_KEYS.taskManager}"]`);
+    if (existing) {
+      bringToFront(existing);
+      return;
+    }
 
-  const html = `
+    const allowed = await requestTaskManagerAccess();
+    if (!allowed) return;
+
+    const html = `
     <div class="cms-grid">
       <label>Choose project
         <select id="cms-select"></select>
@@ -427,9 +484,16 @@ async function openTaskManager() {
       <p class="small" id="cms-msg">Ready.</p>
     </div>`;
 
-  const win = createWindow("Task Manager", html);
-  wireCms(win);
-  state.taskManagerOpening = false;
+    const win = createWindow("Task Manager", html, {
+      key: WINDOW_KEYS.taskManager,
+      onClose: () => {
+        state.taskManagerOpening = false;
+      },
+    });
+    wireCms(win);
+  } finally {
+    state.taskManagerOpening = false;
+  }
 }
 
 function wireCms(win) {
