@@ -18,8 +18,11 @@ const state = {
   z: 20,
   cmsSelection: null,
   selectedIconId: null,
-  lastIconClick: { id: null, ts: 0 },
   taskManagerOpening: false,
+};
+
+const WINDOW_KEYS = {
+  taskManager: "task-manager",
 };
 
 const desktop = document.getElementById("desktop");
@@ -72,19 +75,24 @@ function createIcon({ id, label, img, onOpen }) {
   btn.type = "button";
   btn.dataset.id = id;
   btn.innerHTML = `<img src="${img}" alt="" /><span>${label}</span>`;
+
   btn.addEventListener("click", (event) => {
     event.stopPropagation();
-    const now = Date.now();
-    const isRapidRepeat = state.lastIconClick.id === id && now - state.lastIconClick.ts < 450;
-    state.lastIconClick = { id, ts: now };
     selectDesktopIcon(id);
-    if (isRapidRepeat) onOpen();
   });
+
   btn.addEventListener("dblclick", (event) => {
     event.stopPropagation();
-    state.lastIconClick = { id: null, ts: 0 };
     onOpen();
   });
+
+  btn.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      onOpen();
+    }
+  });
+
   return btn;
 }
 
@@ -169,10 +177,21 @@ function renderTaskbar() {
   });
 }
 
-function createWindow(title, contentHtml) {
+function createWindow(title, contentHtml, options = {}) {
   const template = document.getElementById("project-window-template");
+  const { key = null, onClose = null } = options;
+
+  if (key) {
+    const existing = windowLayer.querySelector(`.xp-window[data-window-key="${key}"]`);
+    if (existing) {
+      bringToFront(existing);
+      return existing;
+    }
+  }
+
   const win = template.content.firstElementChild.cloneNode(true);
   win.querySelector(".window-title").textContent = title;
+  if (key) win.dataset.windowKey = key;
   win.querySelector(".window-content").innerHTML = contentHtml;
 
   const defaultRect = clampWindowToViewport(
@@ -184,10 +203,13 @@ function createWindow(title, contentHtml) {
   win.style.left = `${defaultRect.left}px`;
   win.style.top = `${defaultRect.top}px`;
 
-  win.querySelector(".close-btn").addEventListener("click", () => {
+  const closeWindow = () => {
     win.remove();
+    if (typeof onClose === "function") onClose();
     renderTaskbar();
-  });
+  };
+
+  win.querySelector(".close-btn").addEventListener("click", closeWindow);
   win.addEventListener("mousedown", () => bringToFront(win));
 
   makeDraggable(win);
@@ -197,7 +219,7 @@ function createWindow(title, contentHtml) {
   return win;
 }
 
-function projectWindow(project) {
+function projectWindow(project, projectId) {
   const safe = sanitizeProject(project);
   createWindow(
     `${safe.name}.txt`,
@@ -206,7 +228,8 @@ function projectWindow(project) {
       <strong>Role</strong><span>${safe.role}</span>
       <strong>Year</strong><span>${safe.year}</span>
     </div>
-    <p style="white-space: pre-line;">${safe.description}</p>`
+    <p style="white-space: pre-line;">${safe.description}</p>`,
+    { key: `project-${projectId}` }
   );
 }
 
@@ -246,7 +269,7 @@ function renderIcons() {
         id: `project-${index}`,
         label: safe.name,
         img: ICON_DATA_URI,
-        onOpen: () => projectWindow(safe),
+        onOpen: () => projectWindow(safe, index),
       })
     );
   });
@@ -358,17 +381,24 @@ function requestTaskManagerAccess() {
         </div>
         <p class="small" id="task-auth-msg">Password required.</p>
       </div>`;
-    const win = createWindow("Task Manager Login", html);
-    const input = win.querySelector("#task-auth-input");
-    const msg = win.querySelector("#task-auth-msg");
-    const submit = win.querySelector("#task-auth-submit");
-    const cancel = win.querySelector("#task-auth-cancel");
-
     const done = (allowed) => {
+      if (!win.isConnected) {
+        resolve(allowed);
+        return;
+      }
       win.remove();
       renderTaskbar();
       resolve(allowed);
     };
+
+    const win = createWindow("Task Manager Login", html, {
+      key: "task-manager-login",
+      onClose: () => resolve(false),
+    });
+    const input = win.querySelector("#task-auth-input");
+    const msg = win.querySelector("#task-auth-msg");
+    const submit = win.querySelector("#task-auth-submit");
+    const cancel = win.querySelector("#task-auth-cancel");
 
     submit.addEventListener("click", () => {
       if (input.value === "Bong") {
@@ -392,13 +422,17 @@ async function openTaskManager() {
   if (state.taskManagerOpening) return;
   state.taskManagerOpening = true;
 
-  const allowed = await requestTaskManagerAccess();
-  if (!allowed) {
-    state.taskManagerOpening = false;
-    return;
-  }
+  try {
+    const existing = windowLayer.querySelector(`.xp-window[data-window-key="${WINDOW_KEYS.taskManager}"]`);
+    if (existing) {
+      bringToFront(existing);
+      return;
+    }
 
-  const html = `
+    const allowed = await requestTaskManagerAccess();
+    if (!allowed) return;
+
+    const html = `
     <div class="cms-grid">
       <label>Choose project
         <select id="cms-select"></select>
@@ -427,9 +461,16 @@ async function openTaskManager() {
       <p class="small" id="cms-msg">Ready.</p>
     </div>`;
 
-  const win = createWindow("Task Manager", html);
-  wireCms(win);
-  state.taskManagerOpening = false;
+    const win = createWindow("Task Manager", html, {
+      key: WINDOW_KEYS.taskManager,
+      onClose: () => {
+        state.taskManagerOpening = false;
+      },
+    });
+    wireCms(win);
+  } finally {
+    state.taskManagerOpening = false;
+  }
 }
 
 function wireCms(win) {
