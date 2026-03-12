@@ -55,6 +55,27 @@ const selectionBox = document.getElementById("selection-box");
 const windowLayer = document.getElementById("window-layer");
 const taskItems = document.getElementById("task-items");
 const clock = document.getElementById("clock");
+const startButton = document.getElementById("start-button");
+
+const ABOUT_ME_TEXT = {
+  name: "Maximiliano Gaudelli",
+  title: "Writer + ACD",
+  summary:
+    "I found my calling as a writer through some truly cringey Tumblr blogs about music and culture. Since then I’ve led teams and campaigns from first concept to award wins. I care deeply about the work. The opposite of nonchalant.",
+  experience: [
+    { period: "Present", role: "Senior Copywriter", company: "The Community Miami" },
+    { period: "2024 - 2025", role: "Associate Creative Director", company: "Dentsu Creative New York" },
+    { period: "2022 - 2024", role: "Senior Copywriter", company: "Ogilvy Miami & Mexico" },
+    { period: "2020 - 2022", role: "Associate Copywriter", company: "Ogilvy Tokyo" },
+    { period: "2018 - 2020", role: "Associate Copywriter", company: "LaFusión Buenos Aires" },
+    { period: "2014 - 2016", role: "Culture Intern", company: "VICE Media Mexico" },
+  ],
+  education: [
+    "Miami Ad School 2017 - 2019 · Portfolio Program",
+    "Miami Ad School 2021 · Digital Mkt. Bootcamp",
+    "Miami Ad School 2022 - 2023 · AI for Brands Masters",
+  ],
+};
 
 function sanitizeProject(raw = {}) {
   const safe = {};
@@ -784,6 +805,69 @@ function wireDesktopSelectionRectangle() {
   });
 }
 
+function createAboutStartMenu() {
+  const menu = document.createElement("section");
+  menu.id = "start-menu";
+  menu.setAttribute("aria-label", "About me menu");
+  menu.innerHTML = `
+    <div class="start-menu-header">
+      <small>About me</small>
+      <strong>${ABOUT_ME_TEXT.name}</strong>
+      <span>${ABOUT_ME_TEXT.title}</span>
+    </div>
+    <div class="start-menu-body">
+      <p class="about-summary">${ABOUT_ME_TEXT.summary}</p>
+      <div class="about-columns">
+        <section>
+          <h3>Experience</h3>
+          <ul class="experience-list">
+            ${ABOUT_ME_TEXT.experience
+              .map(
+                (item) =>
+                  `<li><span>${item.period}</span><div><strong>${item.role}</strong><em>${item.company}</em></div></li>`
+              )
+              .join("")}
+          </ul>
+        </section>
+        <section>
+          <h3>Education</h3>
+          <ul class="education-list">
+            ${ABOUT_ME_TEXT.education.map((item) => `<li>${item}</li>`).join("")}
+          </ul>
+        </section>
+      </div>
+    </div>`;
+  document.body.appendChild(menu);
+  return menu;
+}
+
+function wireStartMenu() {
+  const startMenu = createAboutStartMenu();
+
+  const closeMenu = () => {
+    startMenu.classList.remove("open");
+    startButton.setAttribute("aria-expanded", "false");
+  };
+
+  startButton.setAttribute("aria-expanded", "false");
+
+  startButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const willOpen = !startMenu.classList.contains("open");
+    startMenu.classList.toggle("open", willOpen);
+    startButton.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
+
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("#start-menu") || event.target.closest("#start-button")) return;
+    closeMenu();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMenu();
+  });
+}
+
 function startClock() {
   const tick = () => {
     clock.textContent = new Date().toLocaleTimeString([], {
@@ -800,6 +884,7 @@ async function init() {
   renderIcons();
   renderTaskbar();
   startClock();
+  wireStartMenu();
   wireDesktopSelectionRectangle();
 }
 
