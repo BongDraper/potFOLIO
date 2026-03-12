@@ -1,0 +1,79 @@
+[
+  {
+    "name": "Bliss Landing",
+    "brand": "Windows XP Tribute",
+    "role": "Creative Developer",
+    "year": "2026",
+    "description": "Reimagined Microsoft nostalgia as an interactive desktop portfolio homepage with pixel-accurate UI and playful interactions."
+  },
+  {
+    "name": "Neon Cart",
+    "brand": "Retail Rocket",
+    "role": "Frontend Lead",
+    "year": "2025",
+    "description": "Designed and shipped a conversion-focused storefront with modular promotions and a rapid campaign publishing workflow."
+  },
+  {
+    "name": "Pulse Board",
+    "brand": "MediScope",
+    "role": "Product Designer",
+    "year": "2025",
+    "description": "Built a clinician dashboard to monitor operational health indicators and prioritize urgent care pathways."
+  },
+  {
+    "name": "Atlas CRM",
+    "brand": "Orbit Sales",
+    "role": "UX Engineer",
+    "year": "2024",
+    "description": "Created information architecture and interaction design patterns for a pipeline-heavy sales operating system."
+  },
+  {
+    "name": "Drift Radio",
+    "brand": "Streamline Audio",
+    "role": "Web Developer",
+    "year": "2024",
+    "description": "Crafted a progressive web app for live DJ sessions with dynamic playlists and real-time listener reactions."
+  },
+  {
+    "name": "Cloud Kitchen OS",
+    "brand": "PantryLab",
+    "role": "Full-Stack Developer",
+    "year": "2023",
+    "description": "Implemented kitchen routing, prep analytics, and service-level reporting for a multi-brand delivery network."
+  },
+  {
+    "name": "Summit Learn",
+    "brand": "Open Campus",
+    "role": "UI Developer",
+    "year": "2023",
+    "description": "Developed an accessible learning platform with lesson bookmarking, guided practice, and teacher authoring tools."
+  },
+  {
+    "name": "RouteLab",
+    "brand": "MoveFast Logistics",
+    "role": "Interaction Designer",
+    "year": "2022",
+    "description": "Prototyped dispatch workflows and map-centric controls to reduce decision latency for fleet operators."
+  },
+  {
+    "name": "Cedar Notes",
+    "brand": "QuietType",
+    "role": "Frontend Developer",
+    "year": "2022",
+    "description": "Engineered an offline-first notes app with tag-based organization and smooth markdown preview transitions."
+  },
+  {
+    "name": "Forge Tickets",
+    "brand": "Venue Forge",
+    "role": "Product Engineer",
+    "year": "2021",
+    "description": "Delivered an event ticketing checkout that improved mobile completion rates and reduced support requests."
+  },
+  {
+    "name": "Helio Finance",
+    "brand": "Sunline Capital",
+    "role": "Design Technologist",
+    "year": "2021",
+    "description": "Produced interactive storytelling modules to explain investment products and portfolio performance clearly."
+  }
+]

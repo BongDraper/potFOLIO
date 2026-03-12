@@ -1,43 +1,25 @@
-# Portfolio Site (XP Desktop)
+# potFOLIO (Windows XP Desktop Edition)
 
-Windows XP-inspired portfolio for GitHub Pages.
-
-## Features
-- Desktop UI with clickable project icons
-- Each project is backed by `data/projects.json`
-- Built-in **Task Manager** CMS icon (password: `Bong`)
-- CMS fields:
-  - Project Name
-  - Brand (Client)
-  - Role
-  - Year
-  - Description
-- Push updates directly to repo via GitHub API from Task Manager (so changes survive refresh)
+Static GitHub Pages portfolio rebuilt from scratch as a Windows XP-inspired desktop.
 
 ## Files
-- `index.html` — desktop shell
-- `styles.css` — XP-inspired styling + icon behavior
-- `app.js` — windows, project rendering, CMS, GitHub push/pull
-- `data/projects.json` — content DB
-- `assets/bliss.jpg` — wallpaper
 
-## GitHub Pages setup
-1. Create/Use repo (example: `portfolio-site`)
-2. Upload this folder contents to repo root
-3. Enable GitHub Pages (Deploy from branch: `main` / root)
+- `index.html` — desktop shell, window template, and taskbar.
+- `styles.css` — XP styling for desktop, icons, taskbar, and windows.
+- `app.js` — icon rendering, draggable windows, and Task Manager CMS logic.
+- `data/projects.json` — seed project data (11 sample projects).
+- Desktop icons use an inline SVG data URI (no binary assets required).
 
-## CMS Repo Push Setup (inside Task Manager)
-Open **Task Manager** icon and enter:
-- Owner (GitHub username/org)
-- Repo name
-- Branch (usually `main`)
-- GitHub token (fine-grained PAT with `Contents: Read and write`)
+## Features
 
-Then:
-- **Pull From Repo** to sync
-- **Push To Repo** to commit `data/projects.json`
+- Desktop background and XP-like taskbar UI.
+- Project icons open details windows on double-click.
+- Task Manager icon asks for password (`Bong`) and opens CMS.
+- CMS supports create/read/update/delete for projects.
+- Save local override to browser localStorage.
+- Pull `data/projects.json` from GitHub raw URL.
+- Push `data/projects.json` back to GitHub Contents API.
 
-## Notes
-- Password gate (`Bong`) is UI-level access control only.
-- True write security comes from GitHub token permissions.
-- For production, rotate token regularly and avoid sharing it.
+## Run locally
+
+Open `index.html` directly or serve with any static file server.
