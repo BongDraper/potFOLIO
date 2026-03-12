@@ -56,3 +56,29 @@ Use a Personal Access Token with repository write access:
   - `name`, `brand`, `role`, `year`, `description`
 - Missing/corrupt input is normalized with defaults so the desktop can still render.
 - Local overrides are stored in browser `localStorage` under `potfolio.projects.override.v2`.
+
+## Custom domain (maxgaudelli.com + www.maxgaudelli.com)
+
+This repo now uses an apex-domain `CNAME` (`maxgaudelli.com`) so GitHub Pages can manage both apex + `www` hostnames.
+
+To resolve `InvalidARecordError` (www set as A record), configure DNS exactly as:
+- `www` -> **CNAME** `bongdraper.github.io` (do not use A for `www`)
+- `@` (apex) -> GitHub Pages A records:
+  - `185.199.108.153`
+  - `185.199.109.153`
+  - `185.199.110.153`
+  - `185.199.111.153`
+- (optional IPv6) `@` -> GitHub Pages AAAA records:
+  - `2606:50c0:8000::153`
+  - `2606:50c0:8001::153`
+  - `2606:50c0:8002::153`
+  - `2606:50c0:8003::153`
+
+In GitHub Pages settings:
+1. Set custom domain to `maxgaudelli.com`.
+2. Keep **Enforce HTTPS** enabled (or re-enable once cert provisioning completes).
+
+After DNS updates, wait for propagation + certificate issuance, then verify both:
+- `https://maxgaudelli.com`
+- `https://www.maxgaudelli.com`
+
