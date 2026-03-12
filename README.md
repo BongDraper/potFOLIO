@@ -1,25 +1,58 @@
 # potFOLIO (Windows XP Desktop Edition)
 
-Static GitHub Pages portfolio rebuilt from scratch as a Windows XP-inspired desktop.
+A static GitHub Pages portfolio that behaves like a Windows XP desktop and includes an in-browser Task Manager CMS for managing `data/projects.json`.
 
-## Files
+## Project files
 
-- `index.html` — desktop shell, window template, and taskbar.
-- `styles.css` — XP styling for desktop, icons, taskbar, and windows.
-- `app.js` — icon rendering, draggable windows, and Task Manager CMS logic.
-- `data/projects.json` — seed project data (11 sample projects).
-- Desktop icons use an inline SVG data URI (no binary assets required).
-
-## Features
-
-- Desktop background and XP-like taskbar UI.
-- Project icons open details windows on double-click.
-- Task Manager icon asks for password (`Bong`) and opens CMS.
-- CMS supports create/read/update/delete for projects.
-- Save local override to browser localStorage.
-- Pull `data/projects.json` from GitHub raw URL.
-- Push `data/projects.json` back to GitHub Contents API.
+- `index.html` - desktop shell, taskbar, and reusable window template.
+- `styles.css` - XP look-and-feel and responsive fallback styles.
+- `app.js` - desktop interactions, project windows, schema guards, and CMS + GitHub API sync.
+- `data/projects.json` - source of truth project data.
 
 ## Run locally
 
-Open `index.html` directly or serve with any static file server.
+### Option 1: open directly
+Open `index.html` in your browser.
+
+### Option 2: static server (recommended)
+```bash
+python3 -m http.server 4173
+```
+Then open `http://localhost:4173`.
+
+## Deploy to GitHub Pages
+
+1. Commit changes to the `main` branch.
+2. In GitHub repo settings, go to **Pages**.
+3. Set source to **Deploy from a branch**.
+4. Select branch `main`, folder `/ (root)`.
+5. Save and wait for deployment.
+
+## Task Manager usage
+
+1. Double-click **Task Manager** desktop icon.
+2. Password prompt: `Bong`.
+3. Use CMS controls:
+   - **Add Project**
+   - **Save Edit**
+   - **Delete**
+   - **Save Local** (localStorage persistence)
+   - **Pull From Repo** (reads `data/projects.json` from GitHub Contents API)
+   - **Push To Repo** (writes `data/projects.json` via GitHub Contents API)
+
+## GitHub token requirements for Push
+
+Use a Personal Access Token with repository write access:
+
+- Fine-grained token:
+  - Repository access: your target repo
+  - Permissions: **Contents: Read and Write**
+- Classic token (legacy):
+  - `repo` scope
+
+## Notes
+
+- Project schema is enforced as:
+  - `name`, `brand`, `role`, `year`, `description`
+- Missing/corrupt input is normalized with defaults so the desktop can still render.
+- Local overrides are stored in browser `localStorage` under `potfolio.projects.override.v2`.
