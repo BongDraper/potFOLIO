@@ -282,6 +282,93 @@ body {
 .small.error { color: #8f1111; font-weight: 700; }
 .small.ok { color: #0e5e1c; font-weight: 700; }
 
+
+#start-menu {
+  position: fixed;
+  left: 0;
+  bottom: 40px;
+  width: min(420px, calc(100vw - 12px));
+  max-height: min(74vh, 620px);
+  background: #f8f9fb;
+  border: 1px solid #0b2f8f;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+  display: none;
+  overflow: hidden;
+  z-index: 999;
+}
+
+#start-menu.open {
+  display: block;
+}
+
+.start-menu-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  color: #fff;
+  background: linear-gradient(90deg, #1950bd, #4e9efc);
+  border-bottom: 1px solid #8db7ff;
+}
+
+.start-menu-header strong {
+  font-size: 17px;
+}
+
+.start-menu-header span {
+  font-size: 12px;
+  opacity: 0.95;
+}
+
+.start-menu-body {
+  max-height: calc(min(74vh, 620px) - 62px);
+  overflow: auto;
+  padding: 12px 14px 14px;
+  font-size: 12px;
+  color: #1e1e1e;
+  line-height: 1.35;
+}
+
+.start-menu-body h3 {
+  margin: 10px 0 4px;
+  color: #0e3c96;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.start-menu-body ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.start-menu-body li {
+  display: grid;
+  gap: 2px;
+}
+
+.start-menu-body li span {
+  font-weight: 700;
+  color: #404040;
+}
+
+.start-menu-body li strong {
+  font-weight: 700;
+}
+
+.start-menu-body li em {
+  font-style: normal;
+  color: #0f4f9f;
+}
+
+.start-menu-body .education-item {
+  display: block;
+}
+
 @media (max-width: 760px) {
   body { overflow: auto; }
   #desktop {
