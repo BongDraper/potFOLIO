@@ -10,8 +10,31 @@ const ROLE_NORMALIZATION_MAP = {
   copywriter: "Copywriter",
 };
 
-const ICON_DATA_URI =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%2366a3ff'/%3E%3Cstop offset='1' stop-color='%233077f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23g)'/%3E%3Cpath d='M0 40h64v24H0z' fill='%2332873a'/%3E%3Cpath d='M8 42c8-8 18-10 26-8 8 2 15 8 22 16v14H8z' fill='%234aa84b'/%3E%3C/svg%3E";
+const ICONS = {
+  project:
+    "data:image/svg+xml," +
+    encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <defs>
+        <linearGradient id='folder' x1='0' y1='0' x2='0' y2='1'>
+          <stop offset='0%' stop-color='#ffd979'/>
+          <stop offset='100%' stop-color='#e6a84a'/>
+        </linearGradient>
+      </defs>
+      <path d='M5 16h21l5 6h28v28c0 3-2 5-5 5H10c-3 0-5-2-5-5V16z' fill='url(#folder)' stroke='#9a6a24' stroke-width='2'/>
+      <rect x='6' y='22' width='52' height='31' rx='4' fill='#f3be5a' stroke='#9a6a24' stroke-width='2'/>
+      <rect x='12' y='30' width='24' height='4' rx='2' fill='#fff2bf' opacity='0.75'/>
+    </svg>`),
+  taskManager:
+    "data:image/svg+xml," +
+    encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <rect x='8' y='8' width='48' height='48' rx='5' fill='#f3f3f3' stroke='#9da3ad' stroke-width='2'/>
+      <rect x='12' y='14' width='40' height='8' rx='2' fill='#3f8cff'/>
+      <rect x='14' y='28' width='6' height='20' fill='#58b957'/>
+      <rect x='24' y='34' width='6' height='14' fill='#ffd347'/>
+      <rect x='34' y='24' width='6' height='24' fill='#ff7f50'/>
+      <rect x='44' y='30' width='6' height='18' fill='#4f95ff'/>
+    </svg>`),
+};
 
 const state = {
   projects: [],
@@ -268,7 +291,7 @@ function renderIcons() {
       createIcon({
         id: `project-${index}`,
         label: safe.name,
-        img: ICON_DATA_URI,
+        img: ICONS.project,
         onOpen: () => projectWindow(safe, index),
       })
     );
@@ -278,7 +301,7 @@ function renderIcons() {
     createIcon({
       id: "task-manager",
       label: "Task Manager",
-      img: ICON_DATA_URI,
+      img: ICONS.taskManager,
       onOpen: openTaskManager,
     })
   );
