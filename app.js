@@ -80,7 +80,7 @@ function projectWindow(project) {
       <strong>Role</strong><span>${project.role}</span>
       <strong>Year</strong><span>${project.year}</span>
     </div>
-    <p>${project.description}</p>`
+    <p style="white-space: pre-line;">${project.description}</p>`
   );
 }
 

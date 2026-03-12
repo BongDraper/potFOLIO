@@ -1,79 +1,37 @@
 [
   {
-    "name": "Bliss Landing",
-    "brand": "Windows XP Tribute",
-    "role": "Creative Developer",
-    "year": "2026",
-    "description": "Reimagined Microsoft nostalgia as an interactive desktop portfolio homepage with pixel-accurate UI and playful interactions."
+    "name": "Virtual Shibuya Halloween Festival",
+    "brand": "KDDI Japan",
+    "role": "Campaign Creative",
+    "year": "2020",
+    "description": "As Halloween approached, the widely enjoyed holiday in Japan couldn't be normally celebrated in COVID-stricken 2020. So instead, Shibuya and au built a virtual Shibuya City block-by-block to host the largest ever Halloween gathering.\n\n3x 'The Drum' awards\nCannes Lions 'Innovation' Shortlist\nUS $20 million in earned media\nVR Awards 'Marketing Agency of the Year'\n+400,000 avatars created"
   },
   {
-    "name": "Neon Cart",
-    "brand": "Retail Rocket",
-    "role": "Frontend Lead",
-    "year": "2025",
-    "description": "Designed and shipped a conversion-focused storefront with modular promotions and a rapid campaign publishing workflow."
+    "name": "Smart Spokes",
+    "brand": "Uber Eats",
+    "role": "Campaign Creative",
+    "year": "2020",
+    "description": "Teaming up with tech startup Eyes Japan, Ogilvy Tokyo launched a road safety campaign using Uber Eats delivery bicycles as the medium.\n\nUber Eats bikes were equipped with a Gyrokinetic LED that turned each wheel into a digital screen that comes to life once in motion, displaying glowing safety messages like 'See Me', 'Give me Space', and 'Care for Me' on the streets of Tokyo.\n\n2x D&AD Graphite Pencils\n2x 'The Drum' Awards\nCannes Lions 'Innovation' Shortlist"
   },
   {
-    "name": "Pulse Board",
-    "brand": "MediScope",
-    "role": "Product Designer",
-    "year": "2025",
-    "description": "Built a clinician dashboard to monitor operational health indicators and prioritize urgent care pathways."
-  },
-  {
-    "name": "Atlas CRM",
-    "brand": "Orbit Sales",
-    "role": "UX Engineer",
+    "name": "Mom Knows",
+    "brand": "Apple x T-Mobile",
+    "role": "Creative",
     "year": "2024",
-    "description": "Created information architecture and interaction design patterns for a pipeline-heavy sales operating system."
+    "description": "To launch the new iPhone 16 Pro, T-Mobile teamed up with Apple for a nationwide campaign starring SNL's Marcello Hernandez and his real-life mom, Isabel.\n\nCo-written with Marcello himself, the spot captured the joy of staying connected across generations, Latino style."
   },
   {
-    "name": "Drift Radio",
-    "brand": "Streamline Audio",
-    "role": "Web Developer",
+    "name": "Copa America 2024",
+    "brand": "Samsung x T-Mobile",
+    "role": "Creative",
     "year": "2024",
-    "description": "Crafted a progressive web app for live DJ sessions with dynamic playlists and real-time listener reactions."
+    "description": "For Copa América 2024, T-Mobile launched a national spot celebrating the gameday rituals fans swear by.\n\nFrom lucky jerseys to loud group chats, created in collaboration with Samsung, the film also introduced the new Galaxy S24 and S24 Plus."
   },
   {
-    "name": "Cloud Kitchen OS",
-    "brand": "PantryLab",
-    "role": "Full-Stack Developer",
-    "year": "2023",
-    "description": "Implemented kitchen routing, prep analytics, and service-level reporting for a multi-brand delivery network."
-  },
-  {
-    "name": "Summit Learn",
-    "brand": "Open Campus",
-    "role": "UI Developer",
-    "year": "2023",
-    "description": "Developed an accessible learning platform with lesson bookmarking, guided practice, and teacher authoring tools."
-  },
-  {
-    "name": "RouteLab",
-    "brand": "MoveFast Logistics",
-    "role": "Interaction Designer",
-    "year": "2022",
-    "description": "Prototyped dispatch workflows and map-centric controls to reduce decision latency for fleet operators."
-  },
-  {
-    "name": "Cedar Notes",
-    "brand": "QuietType",
-    "role": "Frontend Developer",
-    "year": "2022",
-    "description": "Engineered an offline-first notes app with tag-based organization and smooth markdown preview transitions."
-  },
-  {
-    "name": "Forge Tickets",
-    "brand": "Venue Forge",
-    "role": "Product Engineer",
-    "year": "2021",
-    "description": "Delivered an event ticketing checkout that improved mobile completion rates and reduced support requests."
-  },
-  {
-    "name": "Helio Finance",
-    "brand": "Sunline Capital",
-    "role": "Design Technologist",
-    "year": "2021",
-    "description": "Produced interactive storytelling modules to explain investment products and portfolio performance clearly."
+    "name": "The Big Giver",
+    "brand": "Apple x T-Mobile",
+    "role": "Creative",
+    "year": "2024",
+    "description": "Apple x T-Mobile campaign project from the latest body of work."
   }
 ]
