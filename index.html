@@ -8,14 +8,14 @@
 </head>
 <body>
   <main id="desktop" aria-label="Windows XP desktop">
-    <div id="desktop-icons" class="icon-grid"></div>
-
+    <div id="desktop-icons" class="icon-grid" aria-label="Desktop icons"></div>
+    <div id="selection-box" aria-hidden="true"></div>
     <section id="window-layer" aria-live="polite"></section>
   </main>
 
   <footer id="taskbar">
-    <button id="start-button" class="task-btn">Start</button>
-    <div id="task-items"></div>
+    <button id="start-button" class="task-btn" aria-label="Start menu">start</button>
+    <div id="task-items" aria-label="Open windows"></div>
     <div id="clock" aria-label="clock"></div>
   </footer>
 
@@ -23,7 +23,11 @@
     <article class="xp-window" role="dialog" aria-modal="false">
       <header class="title-bar drag-handle">
         <strong class="window-title"></strong>
-        <button class="close-btn" aria-label="Close window">✕</button>
+        <div class="window-controls">
+          <button class="window-btn" disabled aria-hidden="true">_</button>
+          <button class="window-btn" disabled aria-hidden="true">▢</button>
+          <button class="window-btn close-btn" aria-label="Close window">✕</button>
+        </div>
       </header>
       <div class="window-content"></div>
     </article>

@@ -1,64 +1,141 @@
 const DATA_URL = "data/projects.json";
-const STORAGE_KEY = "potfolio.projects.override.v1";
-const ICON_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%2366a3ff'/%3E%3Cstop offset='1' stop-color='%233077f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23g)'/%3E%3Cpath d='M0 40h64v24H0z' fill='%2332873a'/%3E%3Cpath d='M8 42c8-8 18-10 26-8 8 2 15 8 22 16v14H8z' fill='%234aa84b'/%3E%3C/svg%3E";
+const STORAGE_KEY = "potfolio.projects.override.v2";
+const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
+
+const ICON_DATA_URI =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%2366a3ff'/%3E%3Cstop offset='1' stop-color='%233077f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23g)'/%3E%3Cpath d='M0 40h64v24H0z' fill='%2332873a'/%3E%3Cpath d='M8 42c8-8 18-10 26-8 8 2 15 8 22 16v14H8z' fill='%234aa84b'/%3E%3C/svg%3E";
 
 const state = {
   projects: [],
   z: 20,
   cmsSelection: null,
+  selectedIconId: null,
 };
 
+const desktop = document.getElementById("desktop");
 const desktopIcons = document.getElementById("desktop-icons");
+const selectionBox = document.getElementById("selection-box");
 const windowLayer = document.getElementById("window-layer");
 const taskItems = document.getElementById("task-items");
 const clock = document.getElementById("clock");
 
-function createIcon({ label, img, onDblClick }) {
+function sanitizeProject(raw = {}) {
+  const safe = {};
+  for (const key of REQUIRED_FIELDS) {
+    const value = raw?.[key];
+    safe[key] = typeof value === "string" ? value.trim() : "";
+  }
+  if (!safe.name) safe.name = "Untitled Project";
+  if (!safe.year) safe.year = "Unknown";
+  if (!safe.brand) safe.brand = "N/A";
+  if (!safe.role) safe.role = "N/A";
+  if (!safe.description) safe.description = "No project description available.";
+  return safe;
+}
+
+function sanitizeProjectList(payload) {
+  if (!Array.isArray(payload)) return [];
+  return payload.map((entry) => sanitizeProject(entry));
+}
+
+function encodeBase64Unicode(text) {
+  return btoa(unescape(encodeURIComponent(text)));
+}
+
+function decodeBase64Unicode(text) {
+  return decodeURIComponent(escape(atob(text)));
+}
+
+function setCmsMessage(node, message, kind = "") {
+  node.classList.remove("ok", "error");
+  if (kind) node.classList.add(kind);
+  node.textContent = message;
+}
+
+function createIcon({ id, label, img, onOpen }) {
   const btn = document.createElement("button");
   btn.className = "desktop-icon";
+  btn.type = "button";
+  btn.dataset.id = id;
   btn.innerHTML = `<img src="${img}" alt="" /><span>${label}</span>`;
-  btn.addEventListener("dblclick", onDblClick);
+  btn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    selectDesktopIcon(id);
+  });
+  btn.addEventListener("dblclick", (event) => {
+    event.stopPropagation();
+    onOpen();
+  });
   return btn;
+}
+
+function selectDesktopIcon(id) {
+  state.selectedIconId = id;
+  for (const icon of desktopIcons.querySelectorAll(".desktop-icon")) {
+    icon.classList.toggle("selected", icon.dataset.id === id);
+  }
+}
+
+function deselectDesktopIcons() {
+  state.selectedIconId = null;
+  for (const icon of desktopIcons.querySelectorAll(".desktop-icon")) {
+    icon.classList.remove("selected");
+  }
 }
 
 function bringToFront(win) {
   state.z += 1;
+  for (const node of windowLayer.querySelectorAll(".xp-window")) {
+    node.classList.remove("active");
+  }
+  win.classList.add("active");
   win.style.zIndex = String(state.z);
+}
+
+function clampWindowToViewport(left, top, width, height) {
+  const maxLeft = Math.max(0, window.innerWidth - width);
+  const maxTop = Math.max(0, window.innerHeight - 80 - height);
+  return {
+    left: Math.min(Math.max(0, left), maxLeft),
+    top: Math.min(Math.max(0, top), maxTop),
+  };
 }
 
 function makeDraggable(win) {
   const handle = win.querySelector(".drag-handle");
   let drag = null;
-  handle.addEventListener("mousedown", (e) => {
+
+  const onMove = (event) => {
+    if (!drag) return;
+    const bounds = clampWindowToViewport(
+      event.clientX - drag.offsetX,
+      event.clientY - drag.offsetY,
+      drag.width,
+      drag.height
+    );
+    win.style.left = `${bounds.left}px`;
+    win.style.top = `${bounds.top}px`;
+  };
+
+  const onUp = () => {
+    drag = null;
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+  };
+
+  handle.addEventListener("mousedown", (event) => {
+    if (event.target.closest(".window-controls")) return;
     bringToFront(win);
     const rect = win.getBoundingClientRect();
-    drag = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    drag = {
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   });
-  window.addEventListener("mousemove", (e) => {
-    if (!drag) return;
-    win.style.left = `${Math.max(0, e.clientX - drag.x)}px`;
-    win.style.top = `${Math.max(0, e.clientY - drag.y)}px`;
-  });
-  window.addEventListener("mouseup", () => (drag = null));
-}
-
-function createWindow(title, contentHtml) {
-  const template = document.getElementById("project-window-template");
-  const win = template.content.firstElementChild.cloneNode(true);
-  win.querySelector(".window-title").textContent = title;
-  win.querySelector(".window-content").innerHTML = contentHtml;
-  win.style.left = `${80 + Math.floor(Math.random() * 140)}px`;
-  win.style.top = `${70 + Math.floor(Math.random() * 120)}px`;
-  win.querySelector(".close-btn").addEventListener("click", () => {
-    win.remove();
-    renderTaskbar();
-  });
-  win.addEventListener("mousedown", () => bringToFront(win));
-  makeDraggable(win);
-  windowLayer.appendChild(win);
-  bringToFront(win);
-  renderTaskbar();
-  return win;
 }
 
 function renderTaskbar() {
@@ -66,21 +143,51 @@ function renderTaskbar() {
   [...windowLayer.querySelectorAll(".xp-window")].forEach((win) => {
     const chip = document.createElement("button");
     chip.className = "task-chip";
+    chip.type = "button";
     chip.textContent = win.querySelector(".window-title").textContent;
     chip.addEventListener("click", () => bringToFront(win));
     taskItems.appendChild(chip);
   });
 }
 
+function createWindow(title, contentHtml) {
+  const template = document.getElementById("project-window-template");
+  const win = template.content.firstElementChild.cloneNode(true);
+  win.querySelector(".window-title").textContent = title;
+  win.querySelector(".window-content").innerHTML = contentHtml;
+
+  const defaultRect = clampWindowToViewport(
+    80 + Math.floor(Math.random() * 120),
+    54 + Math.floor(Math.random() * 90),
+    Math.min(560, window.innerWidth - 10),
+    320
+  );
+  win.style.left = `${defaultRect.left}px`;
+  win.style.top = `${defaultRect.top}px`;
+
+  win.querySelector(".close-btn").addEventListener("click", () => {
+    win.remove();
+    renderTaskbar();
+  });
+  win.addEventListener("mousedown", () => bringToFront(win));
+
+  makeDraggable(win);
+  windowLayer.appendChild(win);
+  bringToFront(win);
+  renderTaskbar();
+  return win;
+}
+
 function projectWindow(project) {
+  const safe = sanitizeProject(project);
   createWindow(
-    `${project.name}.txt`,
+    `${safe.name}.txt`,
     `<div class="project-meta">
-      <strong>Brand</strong><span>${project.brand}</span>
-      <strong>Role</strong><span>${project.role}</span>
-      <strong>Year</strong><span>${project.year}</span>
+      <strong>Brand</strong><span>${safe.brand}</span>
+      <strong>Role</strong><span>${safe.role}</span>
+      <strong>Year</strong><span>${safe.year}</span>
     </div>
-    <p style="white-space: pre-line;">${project.description}</p>`
+    <p style="white-space: pre-line;">${safe.description}</p>`
   );
 }
 
@@ -88,14 +195,22 @@ async function loadProjects() {
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
     try {
-      state.projects = JSON.parse(local);
+      state.projects = sanitizeProjectList(JSON.parse(local));
       return;
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
   }
-  const response = await fetch(DATA_URL);
-  state.projects = await response.json();
+
+  try {
+    const response = await fetch(DATA_URL);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    state.projects = sanitizeProjectList(payload);
+  } catch (error) {
+    console.error("Failed to load data/projects.json", error);
+    state.projects = [];
+  }
 }
 
 function saveOverride() {
@@ -104,29 +219,91 @@ function saveOverride() {
 
 function renderIcons() {
   desktopIcons.innerHTML = "";
-  state.projects.forEach((project) => {
+
+  state.projects.forEach((project, index) => {
+    const safe = sanitizeProject(project);
     desktopIcons.appendChild(
       createIcon({
-        label: project.name,
+        id: `project-${index}`,
+        label: safe.name,
         img: ICON_DATA_URI,
-        onDblClick: () => projectWindow(project),
+        onOpen: () => projectWindow(safe),
       })
     );
   });
 
   desktopIcons.appendChild(
     createIcon({
+      id: "task-manager",
       label: "Task Manager",
       img: ICON_DATA_URI,
-      onDblClick: openTaskManager,
+      onOpen: openTaskManager,
     })
   );
+  deselectDesktopIcons();
+}
+
+function validProjectForSave(project) {
+  return REQUIRED_FIELDS.every((key) => typeof project[key] === "string" && project[key].trim().length > 0);
+}
+
+async function pullFromRepo(owner, repo, branch) {
+  const api = `https://api.github.com/repos/${owner}/${repo}/contents/data/projects.json?ref=${encodeURIComponent(branch)}`;
+  const res = await fetch(api, {
+    headers: { Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`GitHub API ${res.status}: ${detail.slice(0, 160)}`);
+  }
+  const payload = await res.json();
+  if (!payload?.content) throw new Error("Response missing file content.");
+  const decoded = decodeBase64Unicode(payload.content.replace(/\n/g, ""));
+  const parsed = JSON.parse(decoded);
+  return sanitizeProjectList(parsed);
+}
+
+async function pushToRepo(owner, repo, branch, token, projects) {
+  const api = `https://api.github.com/repos/${owner}/${repo}/contents/data/projects.json`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+  };
+
+  let sha;
+  const existing = await fetch(`${api}?ref=${encodeURIComponent(branch)}`, { headers });
+  if (existing.ok) {
+    const payload = await existing.json();
+    sha = payload.sha;
+  } else if (existing.status !== 404) {
+    const text = await existing.text();
+    throw new Error(`Could not read existing file (${existing.status}): ${text.slice(0, 160)}`);
+  }
+
+  const serialized = JSON.stringify(projects, null, 2);
+  JSON.parse(serialized);
+
+  const res = await fetch(api, {
+    method: "PUT",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: "update projects.json from Task Manager CMS",
+      content: encodeBase64Unicode(serialized),
+      branch,
+      sha,
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Push failed (${res.status}): ${detail.slice(0, 180)}`);
+  }
 }
 
 function openTaskManager() {
   const password = window.prompt("Task Manager password:");
   if (password !== "Bong") {
-    alert("Access denied.");
+    window.alert("Access denied.");
     return;
   }
 
@@ -141,19 +318,19 @@ function openTaskManager() {
       <label>Year <input id="f-year" /></label>
       <label>Description <textarea id="f-desc" rows="4"></textarea></label>
       <div class="cms-actions">
-        <button id="new-btn">New</button>
-        <button id="save-btn">Save</button>
+        <button id="new-btn">Add Project</button>
+        <button id="save-btn">Save Edit</button>
         <button id="delete-btn">Delete</button>
-        <button id="local-btn">Save Local Override</button>
+        <button id="local-btn">Save Local</button>
       </div>
       <hr />
-      <label>Owner <input id="gh-owner" placeholder="BongDraper" /></label>
-      <label>Repo <input id="gh-repo" placeholder="potFOLIO" /></label>
+      <label>GitHub Owner <input id="gh-owner" placeholder="bongdraper" /></label>
+      <label>GitHub Repo <input id="gh-repo" placeholder="potFOLIO" /></label>
       <label>Branch <input id="gh-branch" value="main" /></label>
       <label>Token <input id="gh-token" type="password" placeholder="ghp_..." /></label>
       <div class="cms-actions">
-        <button id="pull-btn">Pull data/projects.json</button>
-        <button id="push-btn">Push data/projects.json</button>
+        <button id="pull-btn">Pull From Repo</button>
+        <button id="push-btn">Push To Repo</button>
       </div>
       <p class="small" id="cms-msg">Ready.</p>
     </div>`;
@@ -167,71 +344,96 @@ function wireCms(win) {
   const select = el("cms-select");
   const msg = el("cms-msg");
 
-  function refreshSelect() {
+  function refreshSelect(nextSelection = 0) {
     select.innerHTML = "";
-    state.projects.forEach((p, idx) => {
+    state.projects.forEach((project, idx) => {
+      const safe = sanitizeProject(project);
       const opt = document.createElement("option");
       opt.value = String(idx);
-      opt.textContent = `${p.name} (${p.year})`;
+      opt.textContent = `${safe.name} (${safe.year})`;
       select.appendChild(opt);
     });
-    if (state.projects.length) {
-      select.value = "0";
-      loadIntoForm(0);
+
+    if (!state.projects.length) {
+      state.cmsSelection = null;
+      ["f-name", "f-brand", "f-role", "f-year", "f-desc"].forEach((id) => {
+        el(id).value = "";
+      });
+      return;
     }
+
+    const bounded = Math.min(Math.max(0, nextSelection), state.projects.length - 1);
+    select.value = String(bounded);
+    loadIntoForm(bounded);
   }
 
   function loadIntoForm(idx) {
     state.cmsSelection = idx;
-    const p = state.projects[idx];
-    if (!p) return;
-    el("f-name").value = p.name;
-    el("f-brand").value = p.brand;
-    el("f-role").value = p.role;
-    el("f-year").value = p.year;
-    el("f-desc").value = p.description;
+    const project = sanitizeProject(state.projects[idx]);
+    el("f-name").value = project.name;
+    el("f-brand").value = project.brand;
+    el("f-role").value = project.role;
+    el("f-year").value = project.year;
+    el("f-desc").value = project.description;
   }
 
   function readForm() {
-    return {
-      name: el("f-name").value.trim(),
-      brand: el("f-brand").value.trim(),
-      role: el("f-role").value.trim(),
-      year: el("f-year").value.trim(),
-      description: el("f-desc").value.trim(),
-    };
+    return sanitizeProject({
+      name: el("f-name").value,
+      brand: el("f-brand").value,
+      role: el("f-role").value,
+      year: el("f-year").value,
+      description: el("f-desc").value,
+    });
   }
 
   select.addEventListener("change", () => loadIntoForm(Number(select.value)));
 
   el("new-btn").addEventListener("click", () => {
-    state.projects.push({ name: "New Project", brand: "", role: "", year: "", description: "" });
-    refreshSelect();
-    select.value = String(state.projects.length - 1);
-    loadIntoForm(state.projects.length - 1);
+    state.projects.push(
+      sanitizeProject({
+        name: "New Project",
+        brand: "N/A",
+        role: "N/A",
+        year: String(new Date().getFullYear()),
+        description: "Describe this project.",
+      })
+    );
+    refreshSelect(state.projects.length - 1);
     renderIcons();
+    setCmsMessage(msg, "Project added.", "ok");
   });
 
   el("save-btn").addEventListener("click", () => {
-    if (state.cmsSelection == null) return;
-    state.projects[state.cmsSelection] = readForm();
-    refreshSelect();
-    select.value = String(state.cmsSelection);
-    msg.textContent = "Project saved.";
+    if (state.cmsSelection == null) {
+      setCmsMessage(msg, "No project selected.", "error");
+      return;
+    }
+    const project = readForm();
+    if (!validProjectForSave(project)) {
+      setCmsMessage(msg, "All schema fields are required before saving.", "error");
+      return;
+    }
+    state.projects[state.cmsSelection] = project;
+    refreshSelect(state.cmsSelection);
     renderIcons();
+    setCmsMessage(msg, "Project saved.", "ok");
   });
 
   el("delete-btn").addEventListener("click", () => {
-    if (state.cmsSelection == null) return;
+    if (state.cmsSelection == null) {
+      setCmsMessage(msg, "No project selected.", "error");
+      return;
+    }
     state.projects.splice(state.cmsSelection, 1);
-    refreshSelect();
-    msg.textContent = "Project deleted.";
+    refreshSelect(state.cmsSelection - 1);
     renderIcons();
+    setCmsMessage(msg, "Project deleted.", "ok");
   });
 
   el("local-btn").addEventListener("click", () => {
     saveOverride();
-    msg.textContent = "Local override saved in browser storage.";
+    setCmsMessage(msg, "Saved to localStorage.", "ok");
   });
 
   el("pull-btn").addEventListener("click", async () => {
@@ -239,20 +441,19 @@ function wireCms(win) {
     const repo = el("gh-repo").value.trim();
     const branch = el("gh-branch").value.trim() || "main";
     if (!owner || !repo) {
-      msg.textContent = "Owner/repo required.";
+      setCmsMessage(msg, "Owner and repo are required.", "error");
       return;
     }
+    setCmsMessage(msg, "Pulling from GitHub...", "");
     try {
-      const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data/projects.json`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      state.projects = await res.json();
+      const pulled = await pullFromRepo(owner, repo, branch);
+      state.projects = pulled;
       saveOverride();
       refreshSelect();
       renderIcons();
-      msg.textContent = "Pulled projects.json from GitHub.";
-    } catch (err) {
-      msg.textContent = `Pull failed: ${err.message}`;
+      setCmsMessage(msg, "Pulled data/projects.json from repo.", "ok");
+    } catch (error) {
+      setCmsMessage(msg, `Pull failed: ${error.message}`, "error");
     }
   });
 
@@ -262,60 +463,77 @@ function wireCms(win) {
     const branch = el("gh-branch").value.trim() || "main";
     const token = el("gh-token").value.trim();
     if (!owner || !repo || !token) {
-      msg.textContent = "Owner, repo, and token required.";
+      setCmsMessage(msg, "Owner, repo, and token are required.", "error");
+      return;
+    }
+    const normalized = sanitizeProjectList(state.projects);
+    const valid = normalized.every((project) => validProjectForSave(project));
+    if (!valid) {
+      setCmsMessage(msg, "Schema validation failed. Fill every field before push.", "error");
       return;
     }
 
-    const api = `https://api.github.com/repos/${owner}/${repo}/contents/data/projects.json`;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/vnd.github+json",
-    };
-
+    setCmsMessage(msg, "Pushing to GitHub...", "");
     try {
-      let sha;
-      const existing = await fetch(`${api}?ref=${branch}`, { headers });
-      if (existing.ok) {
-        const j = await existing.json();
-        sha = j.sha;
-      }
-
-      const content = btoa(unescape(encodeURIComponent(JSON.stringify(state.projects, null, 2))));
-      const res = await fetch(api, {
-        method: "PUT",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: "update projects.json from Task Manager CMS",
-          content,
-          branch,
-          sha,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err);
-      }
-      msg.textContent = "Pushed data/projects.json to GitHub.";
-    } catch (err) {
-      msg.textContent = `Push failed: ${err.message}`;
+      await pushToRepo(owner, repo, branch, token, normalized);
+      setCmsMessage(msg, "Pushed data/projects.json to repo.", "ok");
+    } catch (error) {
+      setCmsMessage(msg, `Push failed: ${error.message}`, "error");
     }
   });
 
   refreshSelect();
 }
 
+function wireDesktopSelectionRectangle() {
+  let dragStart = null;
+
+  desktop.addEventListener("mousedown", (event) => {
+    if (event.target.closest(".desktop-icon") || event.target.closest(".xp-window")) return;
+    deselectDesktopIcons();
+    dragStart = { x: event.clientX, y: event.clientY };
+    selectionBox.style.display = "block";
+    selectionBox.style.left = `${dragStart.x}px`;
+    selectionBox.style.top = `${dragStart.y}px`;
+    selectionBox.style.width = "0px";
+    selectionBox.style.height = "0px";
+  });
+
+  desktop.addEventListener("mousemove", (event) => {
+    if (!dragStart) return;
+    const left = Math.min(dragStart.x, event.clientX);
+    const top = Math.min(dragStart.y, event.clientY);
+    const width = Math.abs(event.clientX - dragStart.x);
+    const height = Math.abs(event.clientY - dragStart.y);
+    selectionBox.style.left = `${left}px`;
+    selectionBox.style.top = `${top}px`;
+    selectionBox.style.width = `${width}px`;
+    selectionBox.style.height = `${height}px`;
+  });
+
+  desktop.addEventListener("mouseup", () => {
+    dragStart = null;
+    selectionBox.style.display = "none";
+  });
+}
+
 function startClock() {
   const tick = () => {
-    clock.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    clock.textContent = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
   tick();
-  setInterval(tick, 1000 * 30);
+  setInterval(tick, 30000);
 }
 
 async function init() {
   await loadProjects();
   renderIcons();
+  renderTaskbar();
   startClock();
+  wireDesktopSelectionRectangle();
 }
 
 init();
