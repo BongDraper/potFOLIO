@@ -429,3 +429,118 @@ body {
     min-height: 230px;
   }
 }
+
+@media (max-width: 760px) {
+  #taskbar {
+    height: 46px;
+    gap: 6px;
+    padding: 0 6px;
+  }
+
+  .xp-start {
+    min-width: 122px;
+    margin-left: -6px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 15px;
+  }
+
+  .xp-start-logo {
+    width: 14px;
+    height: 14px;
+  }
+
+  #task-items {
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .task-chip {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+
+  #clock {
+    min-width: 54px;
+    font-size: 11px;
+  }
+
+  #desktop {
+    height: calc(100dvh - 46px);
+  }
+
+  #start-menu {
+    left: 0;
+    right: 0;
+    bottom: 46px;
+    width: 100vw;
+    max-height: calc(100dvh - 54px);
+    border-radius: 10px 10px 0 0;
+    border-left: 0;
+    border-right: 0;
+    overflow: auto;
+  }
+
+  .start-menu-header {
+    padding: 10px 12px;
+  }
+
+  .start-menu-header strong {
+    font-size: 18px;
+    line-height: 1.15;
+  }
+
+  .start-menu-body {
+    padding: 10px 12px 14px;
+    font-size: 13px;
+  }
+
+  .about-summary {
+    margin-bottom: 10px;
+  }
+
+  .experience-list li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 0 0 8px;
+    border-bottom: 1px solid #d7e4ff;
+  }
+
+  .experience-list li:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .experience-list li > span {
+    display: inline-block;
+    width: fit-content;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #e6efff;
+    color: #214c9d;
+  }
+}
+
+@media (max-width: 420px) {
+  .xp-start {
+    min-width: 112px;
+    font-size: 14px;
+  }
+
+  .xp-start-label {
+    letter-spacing: -0.01em;
+  }
+
+  #clock {
+    min-width: 48px;
+    font-size: 10px;
+  }
+
+  .start-menu-header strong {
+    font-size: 16px;
+  }
+
+  .start-menu-body {
+    font-size: 12px;
+  }
+}
