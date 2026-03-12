@@ -3,32 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Max Gaudelli — Portfolio OS</title>
+  <title>potFOLIO XP</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main id="desktop" aria-label="Desktop">
-    <div id="icon-grid" class="icon-grid"></div>
+  <main id="desktop" aria-label="Windows XP desktop">
+    <div id="desktop-icons" class="icon-grid"></div>
+
+    <section id="window-layer" aria-live="polite"></section>
   </main>
 
-  <footer class="taskbar">
-    <button class="start-btn">start</button>
-    <div class="taskbar-title">Portfolio Desktop</div>
-    <div id="clock"></div>
+  <footer id="taskbar">
+    <button id="start-button" class="task-btn">Start</button>
+    <div id="task-items"></div>
+    <div id="clock" aria-label="clock"></div>
   </footer>
 
-  <template id="window-template">
-    <section class="win-window" role="dialog" aria-modal="false">
-      <header class="win-header drag-handle">
-        <span class="win-title">Window</span>
-        <div class="win-controls">
-          <button class="win-close" aria-label="Close">✕</button>
-        </div>
+  <template id="project-window-template">
+    <article class="xp-window" role="dialog" aria-modal="false">
+      <header class="title-bar drag-handle">
+        <strong class="window-title"></strong>
+        <button class="close-btn" aria-label="Close window">✕</button>
       </header>
-      <div class="win-body"></div>
-    </section>
+      <div class="window-content"></div>
+    </article>
   </template>
 
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
 </body>
 </html>
