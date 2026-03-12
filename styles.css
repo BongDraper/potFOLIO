@@ -189,7 +189,7 @@ body {
 
 .xp-start {
   height: 100%;
-  min-width: 112px;
+  min-width: 154px;
   border: 1px solid #0f5a1b;
   border-top-right-radius: 16px;
   border-bottom-right-radius: 16px;
@@ -201,10 +201,10 @@ body {
   align-items: center;
   gap: 8px;
   color: #fff;
-  font-size: 22px;
+  font-size: 18px;
   font-style: italic;
   font-weight: 700;
-  text-transform: lowercase;
+  text-transform: none;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
   background: linear-gradient(180deg, #4fd157 0%, #2ea13b 47%, #1f7d2f 100%);
   box-shadow:
@@ -282,7 +282,132 @@ body {
 .small.error { color: #8f1111; font-weight: 700; }
 .small.ok { color: #0e5e1c; font-weight: 700; }
 
+
+#start-menu {
+  position: fixed;
+  left: 0;
+  bottom: 40px;
+  width: min(680px, calc(100vw - 12px));
+  background: #f8f9fb;
+  border: 1px solid #0b2f8f;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+  display: none;
+  overflow: hidden;
+  z-index: 999;
+}
+
+#start-menu.open {
+  display: block;
+}
+
+.start-menu-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  color: #fff;
+  background: linear-gradient(90deg, #1950bd, #4e9efc);
+  border-bottom: 1px solid #8db7ff;
+}
+
+.start-menu-header small {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+.start-menu-header strong {
+  font-size: 19px;
+}
+
+.start-menu-header span {
+  font-size: 12px;
+  opacity: 0.95;
+}
+
+.start-menu-body {
+  padding: 12px 14px 14px;
+  font-size: 12px;
+  color: #1e1e1e;
+  line-height: 1.4;
+}
+
+.about-summary {
+  margin: 0 0 12px;
+}
+
+.about-columns {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+}
+
+.start-menu-body h3 {
+  margin: 0 0 6px;
+  color: #0e3c96;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.start-menu-body ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.experience-list,
+.education-list {
+  display: grid;
+  gap: 7px;
+}
+
+.experience-list li {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.experience-list li > span {
+  font-weight: 700;
+  color: #444;
+}
+
+.experience-list li > div {
+  display: grid;
+  gap: 1px;
+}
+
+.start-menu-body li strong {
+  font-weight: 700;
+}
+
+.start-menu-body li em {
+  font-style: normal;
+  color: #0f4f9f;
+}
+
+.education-list li {
+  padding-left: 10px;
+  position: relative;
+}
+
+.education-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #1d61b6;
+}
+
 @media (max-width: 760px) {
+  .about-columns {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
   body { overflow: auto; }
   #desktop {
     height: calc(100dvh - 40px);
@@ -302,5 +427,120 @@ body {
     left: 6px !important;
     top: 10px !important;
     min-height: 230px;
+  }
+}
+
+@media (max-width: 760px) {
+  #taskbar {
+    height: 46px;
+    gap: 6px;
+    padding: 0 6px;
+  }
+
+  .xp-start {
+    min-width: 122px;
+    margin-left: -6px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 15px;
+  }
+
+  .xp-start-logo {
+    width: 14px;
+    height: 14px;
+  }
+
+  #task-items {
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .task-chip {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+
+  #clock {
+    min-width: 54px;
+    font-size: 11px;
+  }
+
+  #desktop {
+    height: calc(100dvh - 46px);
+  }
+
+  #start-menu {
+    left: 0;
+    right: 0;
+    bottom: 46px;
+    width: 100vw;
+    max-height: calc(100dvh - 54px);
+    border-radius: 10px 10px 0 0;
+    border-left: 0;
+    border-right: 0;
+    overflow: auto;
+  }
+
+  .start-menu-header {
+    padding: 10px 12px;
+  }
+
+  .start-menu-header strong {
+    font-size: 18px;
+    line-height: 1.15;
+  }
+
+  .start-menu-body {
+    padding: 10px 12px 14px;
+    font-size: 13px;
+  }
+
+  .about-summary {
+    margin-bottom: 10px;
+  }
+
+  .experience-list li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 0 0 8px;
+    border-bottom: 1px solid #d7e4ff;
+  }
+
+  .experience-list li:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .experience-list li > span {
+    display: inline-block;
+    width: fit-content;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #e6efff;
+    color: #214c9d;
+  }
+}
+
+@media (max-width: 420px) {
+  .xp-start {
+    min-width: 112px;
+    font-size: 14px;
+  }
+
+  .xp-start-label {
+    letter-spacing: -0.01em;
+  }
+
+  #clock {
+    min-width: 48px;
+    font-size: 10px;
+  }
+
+  .start-menu-header strong {
+    font-size: 16px;
+  }
+
+  .start-menu-body {
+    font-size: 12px;
   }
 }
