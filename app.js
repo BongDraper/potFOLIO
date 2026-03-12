@@ -811,21 +811,31 @@ function createAboutStartMenu() {
   menu.setAttribute("aria-label", "About me menu");
   menu.innerHTML = `
     <div class="start-menu-header">
+      <small>About me</small>
       <strong>${ABOUT_ME_TEXT.name}</strong>
       <span>${ABOUT_ME_TEXT.title}</span>
     </div>
     <div class="start-menu-body">
-      <p>${ABOUT_ME_TEXT.summary}</p>
-      <h3>Experience</h3>
-      <ul>
-        ${ABOUT_ME_TEXT.experience
-          .map((item) => `<li><span>${item.period}</span><strong>${item.role}</strong><em>${item.company}</em></li>`)
-          .join("")}
-      </ul>
-      <h3>Education</h3>
-      <ul>
-        ${ABOUT_ME_TEXT.education.map((item) => `<li class="education-item">${item}</li>`).join("")}
-      </ul>
+      <p class="about-summary">${ABOUT_ME_TEXT.summary}</p>
+      <div class="about-columns">
+        <section>
+          <h3>Experience</h3>
+          <ul class="experience-list">
+            ${ABOUT_ME_TEXT.experience
+              .map(
+                (item) =>
+                  `<li><span>${item.period}</span><div><strong>${item.role}</strong><em>${item.company}</em></div></li>`
+              )
+              .join("")}
+          </ul>
+        </section>
+        <section>
+          <h3>Education</h3>
+          <ul class="education-list">
+            ${ABOUT_ME_TEXT.education.map((item) => `<li>${item}</li>`).join("")}
+          </ul>
+        </section>
+      </div>
     </div>`;
   document.body.appendChild(menu);
   return menu;
