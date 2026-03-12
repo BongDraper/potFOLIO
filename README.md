@@ -56,3 +56,14 @@ Use a Personal Access Token with repository write access:
   - `name`, `brand`, `role`, `year`, `description`
 - Missing/corrupt input is normalized with defaults so the desktop can still render.
 - Local overrides are stored in browser `localStorage` under `potfolio.projects.override.v2`.
+
+## Custom domain (www.maxgaudelli.com)
+
+This repo now includes a `CNAME` file for `www.maxgaudelli.com` so GitHub Pages can provision the correct SSL certificate.
+
+If Safari still shows a secure connection error, verify DNS:
+- `www` should be a `CNAME` to `<username>.github.io`
+- (optional apex) `maxgaudelli.com` should use GitHub Pages A/AAAA records
+
+After DNS changes, allow certificate issuance/propagation time and then re-check `https://www.maxgaudelli.com`.
+
