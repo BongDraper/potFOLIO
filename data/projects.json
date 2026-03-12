@@ -46,5 +46,13 @@
     "year": "2025",
     "description": "Describe this project.",
     "videoUrl": "https://vimeo.com/1153054979?share=copy&fl=sv&fe=ci"
+  },
+  {
+    "name": "New Project",
+    "brand": "N/A",
+    "role": "Associate Creative Director",
+    "year": "2026",
+    "description": "Describe this project.",
+    "videoUrl": ""
   }
 ]
