@@ -19,6 +19,7 @@ body {
   margin: 0;
   font-family: Tahoma, "MS Sans Serif", sans-serif;
   color: #111;
+  min-height: 100vh;
   overflow: hidden;
 }
 
@@ -26,19 +27,20 @@ body {
   height: calc(100vh - 40px);
   position: relative;
   padding: 14px;
+  overflow: auto;
   background: linear-gradient(180deg, var(--xp-sky-1) 0%, var(--xp-sky-2) 50%, var(--xp-hill-1) 82%, var(--xp-hill-2) 100%);
   user-select: none;
 }
 
 .icon-grid {
   display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat(auto-fill, 84px);
-  grid-auto-columns: 82px;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 84px));
+  grid-auto-rows: 86px;
   gap: 10px;
   align-content: start;
   justify-content: start;
-  height: 100%;
+  min-height: 100%;
+  padding-bottom: 18px;
 }
 
 .desktop-icon {
@@ -233,10 +235,8 @@ body {
     padding: 10px;
   }
   .icon-grid {
-    grid-auto-flow: row;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    grid-auto-columns: unset;
-    grid-template-rows: unset;
+    grid-auto-rows: minmax(86px, auto);
   }
   .xp-window {
     width: calc(100vw - 12px);

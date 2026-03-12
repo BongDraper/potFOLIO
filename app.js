@@ -1,6 +1,14 @@
 const DATA_URL = "data/projects.json";
 const STORAGE_KEY = "potfolio.projects.override.v2";
 const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
+const ROLE_NORMALIZATION_MAP = {
+  creative: "Associate Creative Director",
+  "campaign creative": "Campaign Creative",
+  "associate creative director": "Associate Creative Director",
+  "creative director": "Creative Director",
+  "art director": "Art Director",
+  copywriter: "Copywriter",
+};
 
 const ICON_DATA_URI =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%2366a3ff'/%3E%3Cstop offset='1' stop-color='%233077f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23g)'/%3E%3Cpath d='M0 40h64v24H0z' fill='%2332873a'/%3E%3Cpath d='M8 42c8-8 18-10 26-8 8 2 15 8 22 16v14H8z' fill='%234aa84b'/%3E%3C/svg%3E";
@@ -10,6 +18,8 @@ const state = {
   z: 20,
   cmsSelection: null,
   selectedIconId: null,
+  lastIconClick: { id: null, ts: 0 },
+  taskManagerOpening: false,
 };
 
 const desktop = document.getElementById("desktop");
@@ -25,10 +35,14 @@ function sanitizeProject(raw = {}) {
     const value = raw?.[key];
     safe[key] = typeof value === "string" ? value.trim() : "";
   }
+
+  const roleKey = safe.role.toLowerCase();
+  safe.role = ROLE_NORMALIZATION_MAP[roleKey] || safe.role;
+
   if (!safe.name) safe.name = "Untitled Project";
   if (!safe.year) safe.year = "Unknown";
   if (!safe.brand) safe.brand = "N/A";
-  if (!safe.role) safe.role = "N/A";
+  if (!safe.role) safe.role = "Associate Creative Director";
   if (!safe.description) safe.description = "No project description available.";
   return safe;
 }
@@ -60,10 +74,15 @@ function createIcon({ id, label, img, onOpen }) {
   btn.innerHTML = `<img src="${img}" alt="" /><span>${label}</span>`;
   btn.addEventListener("click", (event) => {
     event.stopPropagation();
+    const now = Date.now();
+    const isRapidRepeat = state.lastIconClick.id === id && now - state.lastIconClick.ts < 450;
+    state.lastIconClick = { id, ts: now };
     selectDesktopIcon(id);
+    if (isRapidRepeat) onOpen();
   });
   btn.addEventListener("dblclick", (event) => {
     event.stopPropagation();
+    state.lastIconClick = { id: null, ts: 0 };
     onOpen();
   });
   return btn;
@@ -247,6 +266,29 @@ function validProjectForSave(project) {
   return REQUIRED_FIELDS.every((key) => typeof project[key] === "string" && project[key].trim().length > 0);
 }
 
+function validateProjects(projects) {
+  if (!Array.isArray(projects)) {
+    return { ok: false, message: "Projects payload is not an array." };
+  }
+
+  const normalized = sanitizeProjectList(projects);
+  const invalidIndex = normalized.findIndex((project) => !validProjectForSave(project));
+  if (invalidIndex !== -1) {
+    return { ok: false, message: `Project ${invalidIndex + 1} is missing required schema fields.` };
+  }
+
+  const nameSet = new Set();
+  for (const project of normalized) {
+    const key = project.name.toLowerCase();
+    if (nameSet.has(key)) {
+      return { ok: false, message: `Duplicate project name found: ${project.name}` };
+    }
+    nameSet.add(key);
+  }
+
+  return { ok: true, message: `Self-check passed (${normalized.length} projects valid).` };
+}
+
 async function pullFromRepo(owner, repo, branch) {
   const api = `https://api.github.com/repos/${owner}/${repo}/contents/data/projects.json?ref=${encodeURIComponent(branch)}`;
   const res = await fetch(api, {
@@ -281,7 +323,11 @@ async function pushToRepo(owner, repo, branch, token, projects) {
   }
 
   const serialized = JSON.stringify(projects, null, 2);
-  JSON.parse(serialized);
+  try {
+    JSON.parse(serialized);
+  } catch {
+    throw new Error("JSON validation failed before push.");
+  }
 
   const res = await fetch(api, {
     method: "PUT",
@@ -300,10 +346,55 @@ async function pushToRepo(owner, repo, branch, token, projects) {
   }
 }
 
-function openTaskManager() {
-  const password = window.prompt("Task Manager password:");
-  if (password !== "Bong") {
-    window.alert("Access denied.");
+function requestTaskManagerAccess() {
+  return new Promise((resolve) => {
+    const html = `
+      <div class="cms-grid">
+        <p class="small">Enter Task Manager password to continue.</p>
+        <label>Password <input id="task-auth-input" type="password" autocomplete="off" /></label>
+        <div class="cms-actions">
+          <button id="task-auth-submit">Unlock</button>
+          <button id="task-auth-cancel">Cancel</button>
+        </div>
+        <p class="small" id="task-auth-msg">Password required.</p>
+      </div>`;
+    const win = createWindow("Task Manager Login", html);
+    const input = win.querySelector("#task-auth-input");
+    const msg = win.querySelector("#task-auth-msg");
+    const submit = win.querySelector("#task-auth-submit");
+    const cancel = win.querySelector("#task-auth-cancel");
+
+    const done = (allowed) => {
+      win.remove();
+      renderTaskbar();
+      resolve(allowed);
+    };
+
+    submit.addEventListener("click", () => {
+      if (input.value === "Bong") {
+        done(true);
+        return;
+      }
+      setCmsMessage(msg, "Access denied.", "error");
+      input.focus();
+      input.select();
+    });
+
+    cancel.addEventListener("click", () => done(false));
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") submit.click();
+    });
+    input.focus();
+  });
+}
+
+async function openTaskManager() {
+  if (state.taskManagerOpening) return;
+  state.taskManagerOpening = true;
+
+  const allowed = await requestTaskManagerAccess();
+  if (!allowed) {
+    state.taskManagerOpening = false;
     return;
   }
 
@@ -322,6 +413,7 @@ function openTaskManager() {
         <button id="save-btn">Save Edit</button>
         <button id="delete-btn">Delete</button>
         <button id="local-btn">Save Local</button>
+        <button id="self-check-btn">Self-Check</button>
       </div>
       <hr />
       <label>GitHub Owner <input id="gh-owner" placeholder="bongdraper" /></label>
@@ -337,6 +429,7 @@ function openTaskManager() {
 
   const win = createWindow("Task Manager", html);
   wireCms(win);
+  state.taskManagerOpening = false;
 }
 
 function wireCms(win) {
@@ -394,7 +487,7 @@ function wireCms(win) {
       sanitizeProject({
         name: "New Project",
         brand: "N/A",
-        role: "N/A",
+        role: "Associate Creative Director",
         year: String(new Date().getFullYear()),
         description: "Describe this project.",
       })
@@ -432,8 +525,20 @@ function wireCms(win) {
   });
 
   el("local-btn").addEventListener("click", () => {
+    const normalized = sanitizeProjectList(state.projects);
+    const validation = validateProjects(normalized);
+    if (!validation.ok) {
+      setCmsMessage(msg, `Save failed: ${validation.message}`, "error");
+      return;
+    }
+    state.projects = normalized;
     saveOverride();
-    setCmsMessage(msg, "Saved to localStorage.", "ok");
+    setCmsMessage(msg, "Saved to localStorage (validated).", "ok");
+  });
+
+  el("self-check-btn").addEventListener("click", () => {
+    const validation = validateProjects(state.projects);
+    setCmsMessage(msg, validation.message, validation.ok ? "ok" : "error");
   });
 
   el("pull-btn").addEventListener("click", async () => {
@@ -447,11 +552,13 @@ function wireCms(win) {
     setCmsMessage(msg, "Pulling from GitHub...", "");
     try {
       const pulled = await pullFromRepo(owner, repo, branch);
+      const validation = validateProjects(pulled);
+      if (!validation.ok) throw new Error(`Pulled data failed validation: ${validation.message}`);
       state.projects = pulled;
       saveOverride();
       refreshSelect();
       renderIcons();
-      setCmsMessage(msg, "Pulled data/projects.json from repo.", "ok");
+      setCmsMessage(msg, `Pulled data/projects.json from repo. ${validation.message}`, "ok");
     } catch (error) {
       setCmsMessage(msg, `Pull failed: ${error.message}`, "error");
     }
@@ -467,17 +574,25 @@ function wireCms(win) {
       return;
     }
     const normalized = sanitizeProjectList(state.projects);
-    const valid = normalized.every((project) => validProjectForSave(project));
-    if (!valid) {
-      setCmsMessage(msg, "Schema validation failed. Fill every field before push.", "error");
+    const validation = validateProjects(normalized);
+    if (!validation.ok) {
+      setCmsMessage(msg, `Schema validation failed: ${validation.message}`, "error");
       return;
     }
 
     setCmsMessage(msg, "Pushing to GitHub...", "");
     try {
       await pushToRepo(owner, repo, branch, token, normalized);
-      setCmsMessage(msg, "Pushed data/projects.json to repo.", "ok");
+      setCmsMessage(msg, `Pushed data/projects.json to repo. ${validation.message}`, "ok");
     } catch (error) {
+      if (/401|403/.test(error.message)) {
+        setCmsMessage(msg, "Push failed: token missing repo write permission.", "error");
+        return;
+      }
+      if (/404/.test(error.message)) {
+        setCmsMessage(msg, "Push failed: owner/repo/branch not found.", "error");
+        return;
+      }
       setCmsMessage(msg, `Push failed: ${error.message}`, "error");
     }
   });
