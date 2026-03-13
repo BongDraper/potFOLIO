@@ -430,6 +430,37 @@ body {
   }
 }
 
+@media (min-width: 761px) and (max-width: 1024px) {
+  body {
+    overflow: auto;
+  }
+
+  #desktop {
+    height: calc(100dvh - 40px);
+    padding: 12px;
+  }
+
+  .icon-grid {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    grid-template-rows: none;
+    grid-auto-columns: auto;
+    grid-auto-rows: minmax(96px, auto);
+  }
+
+  .xp-window {
+    width: min(680px, calc(100vw - 28px));
+    left: 14px !important;
+    top: 14px !important;
+    min-height: 250px;
+    max-height: calc(100dvh - 72px);
+  }
+
+  .window-content {
+    max-height: calc(100dvh - 126px);
+  }
+}
+
 @media (max-width: 760px) {
   #taskbar {
     height: 46px;
