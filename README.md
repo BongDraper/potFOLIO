@@ -67,3 +67,11 @@ If Safari still shows a secure connection error, verify DNS:
 
 After DNS changes, allow certificate issuance/propagation time and then re-check `https://www.maxgaudelli.com`.
 
+
+## Cache-busting behavior
+
+To reduce stale-browser issues after deploys, `index.html` now appends a unique query-string version to `styles.css` and `app.js` on every page load, which forces browsers to fetch fresh assets instead of reusing cached bundles.
+
+For strongest control, serve cache headers from your host/CDN as well:
+- `Cache-Control: no-store` for `index.html`
+- long max-age for hashed assets (if you later move to fingerprinted filenames)
