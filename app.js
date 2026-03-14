@@ -39,14 +39,21 @@ const ICONS = {
     "data:image/svg+xml," +
     encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
       <defs>
-        <linearGradient id='wmp' x1='0' y1='0' x2='0' y2='1'>
-          <stop offset='0%' stop-color='#7ec4ff'/>
-          <stop offset='100%' stop-color='#2f58d1'/>
+        <radialGradient id='wmp-disc' cx='35%' cy='35%' r='70%'>
+          <stop offset='0%' stop-color='#8fe4ff'/>
+          <stop offset='60%' stop-color='#2398ea'/>
+          <stop offset='100%' stop-color='#0d3fbc'/>
+        </radialGradient>
+        <linearGradient id='wmp-ring' x1='0' y1='0' x2='1' y2='1'>
+          <stop offset='0%' stop-color='#ffd95c'/>
+          <stop offset='100%' stop-color='#f2861b'/>
         </linearGradient>
       </defs>
-      <rect x='5' y='8' width='54' height='48' rx='6' fill='url(#wmp)' stroke='#12318f' stroke-width='2'/>
-      <circle cx='32' cy='32' r='13' fill='#edf4ff' opacity='0.95'/>
-      <polygon points='29,25 40,32 29,39' fill='#1f49b7'/>
+      <circle cx='32' cy='32' r='25' fill='url(#wmp-disc)' stroke='#07328e' stroke-width='2'/>
+      <circle cx='32' cy='32' r='18' fill='none' stroke='url(#wmp-ring)' stroke-width='8'/>
+      <circle cx='32' cy='32' r='12' fill='#dff6ff' opacity='0.95'/>
+      <polygon points='29,25 41,32 29,39' fill='#1a56be'/>
+      <ellipse cx='24' cy='19' rx='8' ry='4' fill='#ffffff' opacity='0.2' transform='rotate(-25 24 19)'/>
     </svg>`),
 };
 
@@ -582,7 +589,7 @@ function renderIcons() {
       createIcon({
         id: `project-${index}`,
         label: safe.name,
-        img: ICONS.project,
+        img: safe.type === "media-player" ? ICONS.mediaPlayer : ICONS.project,
         onOpen: () => projectWindow(safe, index),
       })
     );
