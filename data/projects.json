@@ -1,82 +1,126 @@
-[
-  {
-    "name": "No Way ft. Kevin Hart",
-    "brand": "Verizon + Apple",
-    "role": "Senior Copywriter",
-    "year": "2025",
-    "description": "To launch the new iPhone 17, Verizon partnered with Kevin Hart on a national campaign built around a simple joke: what happens when the most recognizable guy in the room isn’t actually the thing people are reacting to.\n\nThe film plays off Kevin’s larger-than-life persona and the cultural obsession around every new iPhone release, turning a familiar celebrity moment into a clean, simple punchline for the launch.",
-    "videoUrl": "https://vimeo.com/1153055325?share=copy&fl=sv&fe=ci"
-  },
-  {
-    "name": "Virtual Shibuya Halloween Festival",
-    "brand": "KDDI Japan",
-    "role": "Copywriter",
-    "year": "2020",
-    "description": "As Halloween approached, the widely enjoyed holiday in Japan couldn't be normally celebrated in COVID-stricken 2020. So instead, Shibuya and au built a virtual Shibuya City block-by-block to host the largest ever Halloween gathering.\n\nTEST\n\n3x 'The Drum' awards\nCannes Lions 'Innovation' Shortlist\nUS $20 million in earned media\nVR Awards 'Marketing Agency of the Year'\n+400,000 avatars created",
-    "videoUrl": "https://www.youtube.com/watch?v=_CpfthJHBQs"
-  },
-  {
-    "name": "Mom Knows ft. Marcello Hernandez",
-    "brand": "Apple x T-Mobile",
-    "role": "Associate Creative Director",
-    "year": "2024",
-    "description": "To launch the new iPhone 16 Pro, T-Mobile teamed up with Apple for a nationwide campaign starring SNL's Marcello Hernandez and his real-life mom, Isabel.\n\nCo-written with Marcello himself, the spot captured the joy of staying connected across generations, Latino style.",
-    "videoUrl": "https://vimeo.com/1033533546?share=copy&fl=sv&fe=ci"
-  },
-  {
-    "name": "Smart Spokes",
-    "brand": "Uber Eats",
-    "role": "Copywriter",
-    "year": "2020",
-    "description": "Teaming up with tech startup Eyes Japan, Ogilvy Tokyo launched a road safety campaign using Uber Eats delivery bicycles as the medium.\n\nUber Eats bikes were equipped with a Gyrokinetic LED that turned each wheel into a digital screen that comes to life once in motion, displaying glowing safety messages like 'See Me', 'Give me Space', and 'Care for Me' on the streets of Tokyo.\n\n2x D&AD Graphite Pencils\n2x 'The Drum' Awards\nCannes Lions 'Innovation' Shortlist",
-    "videoUrl": "https://www.youtube.com/watch?v=-LUqzoq_qvI"
-  },
-  {
-    "name": "Right Call ft. Pierluigi Collina",
-    "brand": "FIFA x Verizon",
-    "role": "Senior Creative",
-    "year": "2026",
-    "description": "To promote Verizon’s “Bring Your Bill” offer, we partnered with legendary FIFA referee Pierluigi Collina and reframed a family’s phone bill like a play under review.\n\nKnown worldwide for his authority on the pitch, Collina applies the same intensity to a household debate about a wireless bill. After reviewing the evidence, he delivers a decisive verdict: take that bill to Verizon for a better offer.",
-    "videoUrl": "https://vimeo.com/1173033695?share=copy&fl=sv&fe=ci"
-  },
-  {
-    "name": "Copa America 2024",
-    "brand": "Samsung x T-Mobile",
-    "role": "Associate Creative Director",
-    "year": "2024",
-    "description": "For Copa América 2024, T-Mobile launched a national spot celebrating the gameday rituals fans swear by.\n\nFrom lucky jerseys to loud group chats, created in collaboration with Samsung, the film also introduced the new Galaxy S24 and S24 Plus.",
-    "videoUrl": "https://vimeo.com/1173046324?share=copy&fl=sv&fe=ci"
-  },
-  {
-    "name": "The Big Giver ft. Marcello Hernandez",
-    "brand": "Apple x T-Mobile",
-    "role": "Associate Creative Director",
-    "year": "2024",
-    "description": "New Product Introduction for the launch of the \nbrand-new iPhone 16.\nFeaturing. Marcello Hernandez\nCarrier nationwide launch + feature holiday spot.",
-    "videoUrl": "https://vimeo.com/1082696796?fl=pl&fe=cm"
-  },
-  {
-    "name": "Jumpscare ft. Sofia Niño de Rivera",
-    "brand": "Apple x Verizon",
-    "role": "Senior Creative",
-    "year": "2026",
-    "description": "For this Verizon spot, we partnered with Mexican comedian Sofía Niño de Rivera and treated family phone requests like a horror movie. \n\nThroughout the film, Sofía is repeatedly jump-scared by relatives appearing out of nowhere asking for a new iPhone, turning a very real household situation into a running gag.",
-    "videoUrl": "https://vimeo.com/1153057200?share=copy&fl=sv&fe=ci"
-  },
-  {
-    "name": "Love in the Ai.r",
-    "brand": "KFC",
-    "role": "Senior Copywriter",
-    "year": "2022",
-    "description": "For Valentine’s Day, we launched the first brand-led social activation using artificial intelligence at scale in the LATAM region. \n\nAcross 20 countries, fans shared details about their other half, and Colonel Sanders transformed them into romantic, handcrafted love letters.",
-    "videoUrl": "https://vimeo.com/1173483244?share=copy&fl=sv&fe=ci"
-  },
-  {
-    "name": "Fun + Behance",
-    "brand": "N/A",
-    "role": "Associate Creative Director",
-    "year": "2026",
-    "description": "For more fun work you can visit:   gaudelli.cargo.site     or     www.behance.net/maximilgaudell",
-    "videoUrl": ""
-  }
-]
+{
+  "wallpaperUrl": "",
+  "projects": [
+    {
+      "name": "No Way ft. Kevin Hart",
+      "brand": "Verizon + Apple",
+      "role": "Senior Copywriter",
+      "year": "2025",
+      "description": "To launch the new iPhone 17, Verizon partnered with Kevin Hart on a national campaign built around a simple joke: what happens when the most recognizable guy in the room isn\u2019t actually the thing people are reacting to.\n\nThe film plays off Kevin\u2019s larger-than-life persona and the cultural obsession around every new iPhone release, turning a familiar celebrity moment into a clean, simple punchline for the launch.",
+      "videoUrl": "https://vimeo.com/1153055325?share=copy&fl=sv&fe=ci",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Virtual Shibuya Halloween Festival",
+      "brand": "KDDI Japan",
+      "role": "Copywriter",
+      "year": "2020",
+      "description": "As Halloween approached, the widely enjoyed holiday in Japan couldn't be normally celebrated in COVID-stricken 2020. So instead, Shibuya and au built a virtual Shibuya City block-by-block to host the largest ever Halloween gathering.\n\nTEST\n\n3x 'The Drum' awards\nCannes Lions 'Innovation' Shortlist\nUS $20 million in earned media\nVR Awards 'Marketing Agency of the Year'\n+400,000 avatars created",
+      "videoUrl": "https://www.youtube.com/watch?v=_CpfthJHBQs",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Mom Knows ft. Marcello Hernandez",
+      "brand": "Apple x T-Mobile",
+      "role": "Associate Creative Director",
+      "year": "2024",
+      "description": "To launch the new iPhone 16 Pro, T-Mobile teamed up with Apple for a nationwide campaign starring SNL's Marcello Hernandez and his real-life mom, Isabel.\n\nCo-written with Marcello himself, the spot captured the joy of staying connected across generations, Latino style.",
+      "videoUrl": "https://vimeo.com/1033533546?share=copy&fl=sv&fe=ci",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Smart Spokes",
+      "brand": "Uber Eats",
+      "role": "Copywriter",
+      "year": "2020",
+      "description": "Teaming up with tech startup Eyes Japan, Ogilvy Tokyo launched a road safety campaign using Uber Eats delivery bicycles as the medium.\n\nUber Eats bikes were equipped with a Gyrokinetic LED that turned each wheel into a digital screen that comes to life once in motion, displaying glowing safety messages like 'See Me', 'Give me Space', and 'Care for Me' on the streets of Tokyo.\n\n2x D&AD Graphite Pencils\n2x 'The Drum' Awards\nCannes Lions 'Innovation' Shortlist",
+      "videoUrl": "https://www.youtube.com/watch?v=-LUqzoq_qvI",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Right Call ft. Pierluigi Collina",
+      "brand": "FIFA x Verizon",
+      "role": "Senior Creative",
+      "year": "2026",
+      "description": "To promote Verizon\u2019s \u201cBring Your Bill\u201d offer, we partnered with legendary FIFA referee Pierluigi Collina and reframed a family\u2019s phone bill like a play under review.\n\nKnown worldwide for his authority on the pitch, Collina applies the same intensity to a household debate about a wireless bill. After reviewing the evidence, he delivers a decisive verdict: take that bill to Verizon for a better offer.",
+      "videoUrl": "https://vimeo.com/1173033695?share=copy&fl=sv&fe=ci",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Copa America 2024",
+      "brand": "Samsung x T-Mobile",
+      "role": "Associate Creative Director",
+      "year": "2024",
+      "description": "For Copa Am\u00e9rica 2024, T-Mobile launched a national spot celebrating the gameday rituals fans swear by.\n\nFrom lucky jerseys to loud group chats, created in collaboration with Samsung, the film also introduced the new Galaxy S24 and S24 Plus.",
+      "videoUrl": "https://vimeo.com/1173046324?share=copy&fl=sv&fe=ci",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "The Big Giver ft. Marcello Hernandez",
+      "brand": "Apple x T-Mobile",
+      "role": "Associate Creative Director",
+      "year": "2024",
+      "description": "New Product Introduction for the launch of the\u00a0\nbrand-new iPhone 16.\nFeaturing. Marcello Hernandez\nCarrier nationwide launch + feature holiday spot.",
+      "videoUrl": "https://vimeo.com/1082696796?fl=pl&fe=cm",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Jumpscare ft. Sofia Ni\u00f1o de Rivera",
+      "brand": "Apple x Verizon",
+      "role": "Senior Creative",
+      "year": "2026",
+      "description": "For this Verizon spot, we partnered with Mexican comedian Sof\u00eda Ni\u00f1o de Rivera and treated family phone requests like a horror movie. \n\nThroughout the film, Sof\u00eda is repeatedly jump-scared by relatives appearing out of nowhere asking for a new iPhone, turning a very real household situation into a running gag.",
+      "videoUrl": "https://vimeo.com/1153057200?share=copy&fl=sv&fe=ci",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Love in the Ai.r",
+      "brand": "KFC",
+      "role": "Senior Copywriter",
+      "year": "2022",
+      "description": "For Valentine\u2019s Day, we launched the first brand-led social activation using artificial intelligence at scale in the LATAM region.\u00a0\n\nAcross 20 countries, fans shared details about their other half, and Colonel Sanders transformed them into romantic, handcrafted love letters.",
+      "videoUrl": "https://vimeo.com/1173483244?share=copy&fl=sv&fe=ci",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Fun + Behance",
+      "brand": "N/A",
+      "role": "Associate Creative Director",
+      "year": "2026",
+      "description": "For more fun work you can visit:   gaudelli.cargo.site     or     www.behance.net/maximilgaudell",
+      "videoUrl": "",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "project"
+    },
+    {
+      "name": "Windows Media Player",
+      "brand": "Windows XP",
+      "role": "Media Player",
+      "year": "2001",
+      "description": "Drop audio files from Task Manager and play them here.",
+      "videoUrl": "",
+      "hyperlinks": "",
+      "iconUrl": "",
+      "type": "media-player"
+    }
+  ]
+}
