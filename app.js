@@ -666,16 +666,37 @@ async function pushToRepo(owner, repo, branch, token, payload) {
     throw new Error("JSON validation failed before push.");
   }
 
-  const res = await fetch(api, {
+  const requestBody = {
+    message: "update projects.json from Task Manager CMS",
+    content: encodeBase64Unicode(serialized),
+    branch,
+    sha,
+  };
+
+  let res = await fetch(api, {
     method: "PUT",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: "update projects.json from Task Manager CMS",
-      content: encodeBase64Unicode(serialized),
-      branch,
-      sha,
-    }),
+    body: JSON.stringify(requestBody),
   });
+
+  if (res.status === 409) {
+    const latest = await fetch(`${api}?ref=${encodeURIComponent(branch)}`, { headers });
+    if (!latest.ok) {
+      const text = await latest.text();
+      throw new Error(`Push failed after conflict; could not refresh file (${latest.status}): ${text.slice(0, 160)}`);
+    }
+
+    const latestPayload = await latest.json();
+    if (!latestPayload?.sha) {
+      throw new Error("Push failed after conflict; latest file SHA missing.");
+    }
+
+    res = await fetch(api, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...requestBody, sha: latestPayload.sha }),
+    });
+  }
 
   if (!res.ok) {
     const detail = await res.text();
