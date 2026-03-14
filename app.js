@@ -1,5 +1,5 @@
 const DATA_URL = "data/projects.json";
-const STORAGE_KEY = "potfolio.projects.override.v4";
+const STORAGE_KEY = "potfolio.projects.override.v3";
 const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
 const OPTIONAL_FIELDS = ["videoUrl", "hyperlinks", "iconUrl", "type"];
 const ROLE_NORMALIZATION_MAP = {
@@ -436,6 +436,60 @@ function openMediaPlayerWindow(projectId, project) {
     btn.addEventListener("click", () => {
       const index = Number(btn.dataset.trackIndex);
       if (Number.isNaN(index) || !tracks[index]) return;
+      audio.src = tracks[index].url;
+      audio.play().catch(() => {});
+    });
+  });
+
+  if (tracks[0]) {
+    audio.src = tracks[0].url;
+  }
+}
+
+function ensureMediaPlayerProject() {
+  const existing = state.projects.find((project) => sanitizeProject(project).type === "media-player");
+  if (!existing) {
+    state.projects.push(sanitizeProject(DEFAULT_MEDIA_PLAYER));
+  }
+}
+
+function normalizeDataPayload(payload) {
+  if (Array.isArray(payload)) {
+    return { projects: sanitizeProjectList(payload), wallpaperUrl: "" };
+  }
+  return {
+    projects: sanitizeProjectList(payload?.projects),
+    wallpaperUrl: typeof payload?.wallpaperUrl === "string" ? payload.wallpaperUrl.trim() : "",
+  };
+}
+
+function openMediaPlayerWindow(projectId, project) {
+  const tracks = state.mediaLibrary;
+  const playlist = tracks.length
+    ? `<ul class="media-playlist">${tracks
+        .map(
+          (track, idx) =>
+            `<li><button type="button" class="media-track-btn" data-track-index="${idx}">${track.name}</button></li>`
+        )
+        .join("")}</ul>`
+    : `<p class="small">No tracks loaded yet. Use Task Manager → Projects to add audio files.</p>`;
+
+  const win = createWindow(
+    `${project.name}.exe`,
+    `<div class="wmp-shell">
+      <div class="wmp-menu">File&nbsp;&nbsp;View&nbsp;&nbsp;Play&nbsp;&nbsp;Tools&nbsp;&nbsp;Help</div>
+      <div class="wmp-screen"></div>
+      <audio id="media-audio" controls preload="metadata"></audio>
+      ${playlist}
+    </div>`,
+    { key: `project-${projectId}` }
+  );
+
+  const audio = win.querySelector("#media-audio");
+  win.querySelectorAll(".media-track-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const index = Number(btn.dataset.trackIndex);
+      if (Number.isNaN(index) || !tracks[index]) return;
       audio.src = tracks[index].dataUrl;
       audio.play().catch(() => {});
     });
@@ -471,7 +525,6 @@ async function loadProjects() {
       const normalized = normalizeDataPayload(JSON.parse(local));
       state.projects = normalized.projects;
       state.wallpaperUrl = normalized.wallpaperUrl;
-      state.mediaLibrary = normalized.mediaLibrary;
       ensureMediaPlayerProject();
       return;
     } catch {
@@ -486,7 +539,6 @@ async function loadProjects() {
     const normalized = normalizeDataPayload(payload);
     state.projects = normalized.projects;
     state.wallpaperUrl = normalized.wallpaperUrl;
-    state.mediaLibrary = normalized.mediaLibrary;
     ensureMediaPlayerProject();
   } catch (error) {
     console.error("Failed to load data/projects.json", error);
