@@ -76,6 +76,12 @@ const WINDOW_KEYS = {
   taskManager: "task-manager",
 };
 
+const REPO_DEFAULTS = {
+  owner: "bongdraper",
+  repo: "potFOLIO",
+  branch: "main",
+};
+
 const desktop = document.getElementById("desktop");
 const desktopIcons = document.getElementById("desktop-icons");
 const selectionBox = document.getElementById("selection-box");
@@ -576,7 +582,7 @@ function renderIcons() {
       createIcon({
         id: `project-${index}`,
         label: safe.name,
-        img: safe.iconUrl || (safe.type === "media-player" ? ICONS.mediaPlayer : ICONS.project),
+        img: ICONS.project,
         onOpen: () => projectWindow(safe, index),
       })
     );
@@ -774,57 +780,51 @@ async function openTaskManager() {
     if (!allowed) return;
 
     const html = `
-    <div class="cms-grid">
-      <label>Choose project
-        <select id="cms-select"></select>
-      </label>
-      <label>Name <input id="f-name" /></label>
-      <label>Brand <input id="f-brand" /></label>
-      <label>Role <input id="f-role" /></label>
-      <label>Year <input id="f-year" /></label>
-      <div class="cms-tabs">
-        <button type="button" class="cms-tab active" data-tab="projects">Projects</button>
-        <button type="button" class="cms-tab" data-tab="wallpaper">Wallpaper + Icons</button>
-      </div>
-      <section class="cms-panel active" data-panel="projects">
-      <label>Description <textarea id="f-desc" rows="4"></textarea></label>
-      <label>Video URL (YouTube/Vimeo) <input id="f-video" placeholder="https://..." /></label>
-      <label>Hyperlinks (one URL per line or comma-separated) <textarea id="f-links" rows="3" placeholder="https://..."></textarea></label>
-      <div class="cms-actions">
-        <button id="new-btn">Add Project</button>
-        <button id="new-wmp-btn">Add Windows Media Player</button>
-        <button id="save-btn">Save Edit</button>
-        <button id="delete-btn">Delete</button>
-        <button id="local-btn">Save Local</button>
-        <button id="self-check-btn">Self-Check</button>
-      </div>
-      <label>Audio files for Windows Media Player <input id="f-audio" type="file" accept="audio/*" multiple /></label>
-      <button id="audio-add-btn">Load Audio Files</button>
-      <hr />
-      <label>GitHub Owner <input id="gh-owner" placeholder="bongdraper" /></label>
-      <label>GitHub Repo <input id="gh-repo" placeholder="potFOLIO" /></label>
-      <label>Branch <input id="gh-branch" value="main" /></label>
-      <label>Token <input id="gh-token" type="password" placeholder="ghp_..." /></label>
-      <div class="cms-actions">
-        <button id="pull-btn">Pull From Repo</button>
-        <button id="push-btn">Push To Repo</button>
-      </div>
+    <div class="cms-grid task-manager-grid">
+      <section class="cms-card">
+        <h3>Projects</h3>
+        <label>Choose project
+          <select id="cms-select"></select>
+        </label>
+        <label>Name <input id="f-name" /></label>
+        <label>Brand <input id="f-brand" /></label>
+        <label>Role <input id="f-role" /></label>
+        <label>Year <input id="f-year" /></label>
+        <label>Description <textarea id="f-desc" rows="4"></textarea></label>
+        <label>Video URL (YouTube/Vimeo) <input id="f-video" placeholder="https://..." /></label>
+        <label>Hyperlinks (one URL per line or comma-separated) <textarea id="f-links" rows="3" placeholder="https://..."></textarea></label>
+        <div class="cms-actions">
+          <button id="new-btn">Add Project</button>
+          <button id="new-wmp-btn">Add Windows Media Player</button>
+          <button id="save-btn">Save Edit</button>
+          <button id="delete-btn">Delete</button>
+          <button id="local-btn">Save Local</button>
+          <button id="self-check-btn">Self-Check</button>
+        </div>
       </section>
-      <section class="cms-panel" data-panel="wallpaper">
+
+      <section class="cms-card">
+        <h3>Project Assets (push with projects)</h3>
         <label>Wallpaper image file <input id="wallpaper-file" type="file" accept="image/*" /></label>
         <div class="cms-actions">
           <button id="wallpaper-apply-btn">Apply Wallpaper File</button>
           <button id="wallpaper-clear-btn">Use Default Wallpaper</button>
         </div>
-        <label>Project icon target
-          <select id="icon-project-select"></select>
-        </label>
-        <label>Project icon file <input id="icon-file" type="file" accept="image/*" /></label>
+        <label>Windows Media files <input id="f-audio" type="file" accept="audio/*" multiple /></label>
+        <button id="audio-add-btn" type="button">Load Audio Files</button>
+        <p class="small">Wallpaper + media are stored and pushed together with projects.</p>
+      </section>
+
+      <section class="cms-card">
+        <h3>Git Sync</h3>
+        <label>Git key <input id="gh-token" type="password" placeholder="ghp_..." /></label>
+        <p class="small">Using bongdraper/potFOLIO on main.</p>
         <div class="cms-actions">
-          <button id="icon-save-btn">Save Icon File</button>
-          <button id="icon-clear-btn">Clear Custom Icon</button>
+          <button id="pull-btn">Pull From Repo</button>
+          <button id="push-btn">Push To Repo</button>
         </div>
       </section>
+
       <p class="small" id="cms-msg">Ready.</p>
     </div>`;
 
@@ -844,11 +844,9 @@ function wireCms(win) {
   const el = (id) => win.querySelector(`#${id}`);
   const select = el("cms-select");
   const msg = el("cms-msg");
-  const iconSelect = el("icon-project-select");
 
   function refreshSelect(nextSelection = 0) {
     select.innerHTML = "";
-    iconSelect.innerHTML = "";
     state.projects.forEach((project, idx) => {
       const safe = sanitizeProject(project);
       const opt = document.createElement("option");
@@ -856,10 +854,6 @@ function wireCms(win) {
       opt.textContent = `${safe.name} (${safe.year})`;
       select.appendChild(opt);
 
-      const iconOpt = document.createElement("option");
-      iconOpt.value = String(idx);
-      iconOpt.textContent = safe.name;
-      iconSelect.appendChild(iconOpt);
     });
 
     if (!state.projects.length) {
@@ -872,7 +866,6 @@ function wireCms(win) {
 
     const bounded = Math.min(Math.max(0, nextSelection), state.projects.length - 1);
     select.value = String(bounded);
-    iconSelect.value = String(bounded);
     loadIntoForm(bounded);
   }
 
@@ -898,23 +891,12 @@ function wireCms(win) {
       description: el("f-desc").value,
       videoUrl: el("f-video").value,
       hyperlinks: el("f-links").value,
-      iconUrl: selected.iconUrl,
+      iconUrl: "",
       type: selected.type,
     });
   }
 
-  win.querySelectorAll(".cms-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const target = tab.dataset.tab;
-      win.querySelectorAll(".cms-tab").forEach((node) => node.classList.toggle("active", node === tab));
-      win
-        .querySelectorAll(".cms-panel")
-        .forEach((node) => node.classList.toggle("active", node.dataset.panel === target));
-    });
-  });
-
   select.addEventListener("change", () => loadIntoForm(Number(select.value)));
-  iconSelect.addEventListener("change", () => loadIntoForm(Number(iconSelect.value)));
 
   el("new-btn").addEventListener("click", () => {
     state.projects.push(
@@ -1032,46 +1014,6 @@ function wireCms(win) {
     setCmsMessage(msg, "Restored default wallpaper.", "ok");
   });
 
-  el("icon-save-btn").addEventListener("click", async () => {
-    const idx = Number(iconSelect.value);
-    const file = el("icon-file").files?.[0];
-    if (Number.isNaN(idx) || !state.projects[idx]) {
-      setCmsMessage(msg, "Select a valid project first.", "error");
-      return;
-    }
-    if (!file) {
-      setCmsMessage(msg, "Choose an icon image file first.", "error");
-      return;
-    }
-    setCmsMessage(msg, "Reading icon file...", "");
-    try {
-      const project = sanitizeProject(state.projects[idx]);
-      project.iconUrl = await readFileAsDataUrl(file);
-      state.projects[idx] = project;
-      renderIcons();
-      saveOverride();
-      if (state.cmsSelection === idx) loadIntoForm(idx);
-      setCmsMessage(msg, "Project icon updated from local file.", "ok");
-    } catch (error) {
-      setCmsMessage(msg, `Icon load failed: ${error.message}`, "error");
-    }
-  });
-
-  el("icon-clear-btn").addEventListener("click", () => {
-    const idx = Number(iconSelect.value);
-    if (Number.isNaN(idx) || !state.projects[idx]) {
-      setCmsMessage(msg, "Select a valid project first.", "error");
-      return;
-    }
-    const project = sanitizeProject(state.projects[idx]);
-    project.iconUrl = "";
-    state.projects[idx] = project;
-    el("icon-file").value = "";
-    renderIcons();
-    saveOverride();
-    setCmsMessage(msg, "Custom icon cleared.", "ok");
-  });
-
   el("local-btn").addEventListener("click", () => {
     const normalized = sanitizeProjectList(state.projects);
     const validation = validateProjects(normalized);
@@ -1090,13 +1032,7 @@ function wireCms(win) {
   });
 
   el("pull-btn").addEventListener("click", async () => {
-    const owner = el("gh-owner").value.trim();
-    const repo = el("gh-repo").value.trim();
-    const branch = el("gh-branch").value.trim() || "main";
-    if (!owner || !repo) {
-      setCmsMessage(msg, "Owner and repo are required.", "error");
-      return;
-    }
+    const { owner, repo, branch } = REPO_DEFAULTS;
     setCmsMessage(msg, "Pulling from GitHub...", "");
     try {
       const pulled = await pullFromRepo(owner, repo, branch);
@@ -1117,12 +1053,10 @@ function wireCms(win) {
   });
 
   el("push-btn").addEventListener("click", async () => {
-    const owner = el("gh-owner").value.trim();
-    const repo = el("gh-repo").value.trim();
-    const branch = el("gh-branch").value.trim() || "main";
+    const { owner, repo, branch } = REPO_DEFAULTS;
     const token = el("gh-token").value.trim();
-    if (!owner || !repo || !token) {
-      setCmsMessage(msg, "Owner, repo, and token are required.", "error");
+    if (!token) {
+      setCmsMessage(msg, "Git key is required.", "error");
       return;
     }
     const normalized = sanitizeProjectList(state.projects);
