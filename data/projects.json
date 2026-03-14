@@ -122,5 +122,6 @@
       "iconUrl": "",
       "type": "media-player"
     }
-  ]
+  ],
+  "mediaLibrary": []
 }

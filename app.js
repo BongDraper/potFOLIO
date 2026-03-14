@@ -203,6 +203,26 @@ function decodeBase64Unicode(text) {
   return decodeURIComponent(escape(atob(text)));
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(new Error(`Failed to read file: ${file?.name || "unknown"}`));
+    reader.readAsDataURL(file);
+  });
+}
+
+function normalizeMediaLibrary(payload) {
+  if (!Array.isArray(payload)) return [];
+  return payload
+    .map((track) => ({
+      name: typeof track?.name === "string" ? track.name.trim() : "",
+      dataUrl: typeof track?.dataUrl === "string" ? track.dataUrl.trim() : "",
+      type: typeof track?.type === "string" ? track.type.trim() : "audio/mpeg",
+    }))
+    .filter((track) => track.name && track.dataUrl);
+}
+
 function setCmsMessage(node, message, kind = "") {
   node.classList.remove("ok", "error");
   if (kind) node.classList.add(kind);
@@ -443,6 +463,61 @@ function normalizeDataPayload(payload) {
   };
 }
 
+function openMediaPlayerWindow(projectId, project) {
+  const tracks = state.mediaLibrary;
+  const playlist = tracks.length
+    ? `<ul class="media-playlist">${tracks
+        .map(
+          (track, idx) =>
+            `<li><button type="button" class="media-track-btn" data-track-index="${idx}">${track.name}</button></li>`
+        )
+        .join("")}</ul>`
+    : `<p class="small">No tracks loaded yet. Use Task Manager → Projects to add audio files.</p>`;
+
+  const win = createWindow(
+    `${project.name}.exe`,
+    `<div class="wmp-shell">
+      <div class="wmp-menu">File&nbsp;&nbsp;View&nbsp;&nbsp;Play&nbsp;&nbsp;Tools&nbsp;&nbsp;Help</div>
+      <div class="wmp-screen"></div>
+      <audio id="media-audio" controls preload="metadata"></audio>
+      ${playlist}
+    </div>`,
+    { key: `project-${projectId}` }
+  );
+
+  const audio = win.querySelector("#media-audio");
+  win.querySelectorAll(".media-track-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const index = Number(btn.dataset.trackIndex);
+      if (Number.isNaN(index) || !tracks[index]) return;
+      audio.src = tracks[index].dataUrl;
+      audio.play().catch(() => {});
+    });
+  });
+
+  if (tracks[0]) {
+    audio.src = tracks[0].dataUrl;
+  }
+}
+
+function ensureMediaPlayerProject() {
+  const existing = state.projects.find((project) => sanitizeProject(project).type === "media-player");
+  if (!existing) {
+    state.projects.push(sanitizeProject(DEFAULT_MEDIA_PLAYER));
+  }
+}
+
+function normalizeDataPayload(payload) {
+  if (Array.isArray(payload)) {
+    return { projects: sanitizeProjectList(payload), wallpaperUrl: "", mediaLibrary: [] };
+  }
+  return {
+    projects: sanitizeProjectList(payload?.projects),
+    wallpaperUrl: typeof payload?.wallpaperUrl === "string" ? payload.wallpaperUrl.trim() : "",
+    mediaLibrary: normalizeMediaLibrary(payload?.mediaLibrary),
+  };
+}
+
 async function loadProjects() {
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
@@ -477,6 +552,7 @@ function saveOverride() {
     JSON.stringify({
       wallpaperUrl: state.wallpaperUrl,
       projects: state.projects,
+      mediaLibrary: state.mediaLibrary,
     })
   );
 }
@@ -714,17 +790,18 @@ async function openTaskManager() {
       </div>
       </section>
       <section class="cms-panel" data-panel="wallpaper">
-        <label>Wallpaper image URL <input id="wallpaper-url" placeholder="https://..." /></label>
+        <label>Wallpaper image file <input id="wallpaper-file" type="file" accept="image/*" /></label>
         <div class="cms-actions">
-          <button id="wallpaper-apply-btn">Apply Wallpaper</button>
+          <button id="wallpaper-apply-btn">Apply Wallpaper File</button>
           <button id="wallpaper-clear-btn">Use Default Wallpaper</button>
         </div>
         <label>Project icon target
           <select id="icon-project-select"></select>
         </label>
-        <label>Project icon URL <input id="icon-url" placeholder="https://... or data:image/..." /></label>
+        <label>Project icon file <input id="icon-file" type="file" accept="image/*" /></label>
         <div class="cms-actions">
-          <button id="icon-save-btn">Save Icon</button>
+          <button id="icon-save-btn">Save Icon File</button>
+          <button id="icon-clear-btn">Clear Custom Icon</button>
         </div>
       </section>
       <p class="small" id="cms-msg">Ready.</p>
@@ -766,7 +843,7 @@ function wireCms(win) {
 
     if (!state.projects.length) {
       state.cmsSelection = null;
-      ["f-name", "f-brand", "f-role", "f-year", "f-desc", "f-video", "f-links", "icon-url"].forEach((id) => {
+      ["f-name", "f-brand", "f-role", "f-year", "f-desc", "f-video", "f-links"].forEach((id) => {
         el(id).value = "";
       });
       return;
@@ -775,7 +852,6 @@ function wireCms(win) {
     const bounded = Math.min(Math.max(0, nextSelection), state.projects.length - 1);
     select.value = String(bounded);
     iconSelect.value = String(bounded);
-    el("wallpaper-url").value = state.wallpaperUrl;
     loadIntoForm(bounded);
   }
 
@@ -789,7 +865,6 @@ function wireCms(win) {
     el("f-desc").value = project.description;
     el("f-video").value = project.videoUrl;
     el("f-links").value = project.hyperlinks;
-    el("icon-url").value = project.iconUrl;
   }
 
   function readForm() {
@@ -888,44 +963,92 @@ function wireCms(win) {
     setCmsMessage(msg, "Project deleted and saved locally.", "ok");
   });
 
-  el("audio-add-btn").addEventListener("click", () => {
+  el("audio-add-btn").addEventListener("click", async () => {
     const files = [...el("f-audio").files];
     if (!files.length) {
       setCmsMessage(msg, "Choose at least one audio file first.", "error");
       return;
     }
-    state.mediaLibrary = files.map((file) => ({ name: file.name, url: URL.createObjectURL(file) }));
-    setCmsMessage(msg, `Loaded ${files.length} audio file(s) for Windows Media Player.`, "ok");
+    setCmsMessage(msg, "Reading audio files...", "");
+    try {
+      const tracks = await Promise.all(
+        files.map(async (file) => ({
+          name: file.name,
+          dataUrl: await readFileAsDataUrl(file),
+          type: file.type || "audio/mpeg",
+        }))
+      );
+      state.mediaLibrary = tracks;
+      saveOverride();
+      setCmsMessage(msg, `Loaded ${files.length} audio file(s). They will sync on Push To Repo.`, "ok");
+    } catch (error) {
+      setCmsMessage(msg, `Audio load failed: ${error.message}`, "error");
+    }
   });
 
-  el("wallpaper-apply-btn").addEventListener("click", () => {
-    state.wallpaperUrl = el("wallpaper-url").value.trim();
-    applyWallpaper();
-    saveOverride();
-    setCmsMessage(msg, "Wallpaper updated locally.", "ok");
+  el("wallpaper-apply-btn").addEventListener("click", async () => {
+    const file = el("wallpaper-file").files?.[0];
+    if (!file) {
+      setCmsMessage(msg, "Choose a wallpaper image file first.", "error");
+      return;
+    }
+    setCmsMessage(msg, "Reading wallpaper file...", "");
+    try {
+      state.wallpaperUrl = await readFileAsDataUrl(file);
+      applyWallpaper();
+      saveOverride();
+      setCmsMessage(msg, "Wallpaper updated from local file.", "ok");
+    } catch (error) {
+      setCmsMessage(msg, `Wallpaper load failed: ${error.message}`, "error");
+    }
   });
 
   el("wallpaper-clear-btn").addEventListener("click", () => {
     state.wallpaperUrl = "";
-    el("wallpaper-url").value = "";
+    el("wallpaper-file").value = "";
     applyWallpaper();
     saveOverride();
     setCmsMessage(msg, "Restored default wallpaper.", "ok");
   });
 
-  el("icon-save-btn").addEventListener("click", () => {
+  el("icon-save-btn").addEventListener("click", async () => {
+    const idx = Number(iconSelect.value);
+    const file = el("icon-file").files?.[0];
+    if (Number.isNaN(idx) || !state.projects[idx]) {
+      setCmsMessage(msg, "Select a valid project first.", "error");
+      return;
+    }
+    if (!file) {
+      setCmsMessage(msg, "Choose an icon image file first.", "error");
+      return;
+    }
+    setCmsMessage(msg, "Reading icon file...", "");
+    try {
+      const project = sanitizeProject(state.projects[idx]);
+      project.iconUrl = await readFileAsDataUrl(file);
+      state.projects[idx] = project;
+      renderIcons();
+      saveOverride();
+      if (state.cmsSelection === idx) loadIntoForm(idx);
+      setCmsMessage(msg, "Project icon updated from local file.", "ok");
+    } catch (error) {
+      setCmsMessage(msg, `Icon load failed: ${error.message}`, "error");
+    }
+  });
+
+  el("icon-clear-btn").addEventListener("click", () => {
     const idx = Number(iconSelect.value);
     if (Number.isNaN(idx) || !state.projects[idx]) {
       setCmsMessage(msg, "Select a valid project first.", "error");
       return;
     }
     const project = sanitizeProject(state.projects[idx]);
-    project.iconUrl = el("icon-url").value.trim();
+    project.iconUrl = "";
     state.projects[idx] = project;
+    el("icon-file").value = "";
     renderIcons();
     saveOverride();
-    if (state.cmsSelection === idx) loadIntoForm(idx);
-    setCmsMessage(msg, "Project icon updated locally.", "ok");
+    setCmsMessage(msg, "Custom icon cleared.", "ok");
   });
 
   el("local-btn").addEventListener("click", () => {
@@ -960,6 +1083,7 @@ function wireCms(win) {
       if (!validation.ok) throw new Error(`Pulled data failed validation: ${validation.message}`);
       state.projects = pulled.projects;
       state.wallpaperUrl = pulled.wallpaperUrl;
+      state.mediaLibrary = pulled.mediaLibrary;
       ensureMediaPlayerProject();
       saveOverride();
       refreshSelect();
@@ -994,10 +1118,12 @@ function wireCms(win) {
       const pushed = await pushToRepo(owner, repo, branch, token, {
         wallpaperUrl: state.wallpaperUrl,
         projects: normalized,
+        mediaLibrary: state.mediaLibrary,
       });
       const pulled = await pullFromRepo(owner, repo, branch);
       state.projects = pulled.projects;
       state.wallpaperUrl = pulled.wallpaperUrl;
+      state.mediaLibrary = pulled.mediaLibrary;
       ensureMediaPlayerProject();
       saveOverride();
       refreshSelect(state.cmsSelection ?? 0);
