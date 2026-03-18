@@ -56,13 +56,27 @@ const REPO_DEFAULTS = {
   branch: "main",
 };
 
-const desktop = document.getElementById("desktop");
-const desktopIcons = document.getElementById("desktop-icons");
-const selectionBox = document.getElementById("selection-box");
-const windowLayer = document.getElementById("window-layer");
-const taskItems = document.getElementById("task-items");
-const clock = document.getElementById("clock");
-const startButton = document.getElementById("start-button");
+let desktop;
+let desktopIcons;
+let selectionBox;
+let windowLayer;
+let taskItems;
+let clock;
+let startButton;
+
+function cacheDomNodes() {
+  desktop = document.getElementById("desktop");
+  desktopIcons = document.getElementById("desktop-icons");
+  selectionBox = document.getElementById("selection-box");
+  windowLayer = document.getElementById("window-layer");
+  taskItems = document.getElementById("task-items");
+  clock = document.getElementById("clock");
+  startButton = document.getElementById("start-button");
+
+  if (!desktop || !desktopIcons || !selectionBox || !windowLayer || !taskItems || !clock || !startButton) {
+    throw new Error("Desktop UI failed to initialize because required DOM nodes were not found.");
+  }
+}
 
 const ABOUT_ME_TEXT = {
   name: "Maximiliano Gaudelli",
@@ -1063,6 +1077,7 @@ function startClock() {
 }
 
 async function init() {
+  cacheDomNodes();
   await loadProjects();
   applyWallpaper();
   renderIcons();
@@ -1072,4 +1087,14 @@ async function init() {
   wireDesktopSelectionRectangle();
 }
 
-init();
+function bootApp() {
+  init().catch((error) => {
+    console.error("Desktop initialization failed", error);
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootApp, { once: true });
+} else {
+  bootApp();
+}
