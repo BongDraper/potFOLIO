@@ -216,6 +216,30 @@ function decodeBase64Unicode(text) {
   return decodeURIComponent(escape(atob(text)));
 }
 
+function getUtf8ByteLength(text) {
+  if (typeof TextEncoder !== "undefined") {
+    return new TextEncoder().encode(text).length;
+  }
+  return unescape(encodeURIComponent(text)).length;
+}
+
+function formatByteCount(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function assertRepoSyncSize(serializedPayload, maxBytes = 900000) {
+  const byteLength = getUtf8ByteLength(serializedPayload);
+  if (byteLength <= maxBytes) return byteLength;
+
+  throw new Error(
+    `GitHub sync payload is ${formatByteCount(byteLength)}, which is too large for this contents API flow. ` +
+      `Reduce the number of synced items or use smaller assets before pushing.`
+  );
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -678,6 +702,7 @@ async function pushToRepo(owner, repo, branch, token, payload) {
   } catch {
     throw new Error("JSON validation failed before push.");
   }
+  assertRepoSyncSize(serialized);
 
   const requestBody = {
     message: "update projects.json from Task Manager CMS",
@@ -712,8 +737,13 @@ async function pushToRepo(owner, repo, branch, token, payload) {
   }
 
   if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Push failed (${res.status}): ${detail.slice(0, 180)}`);
+    const detail = (await res.text()).trim();
+    if (res.status >= 500 && !detail) {
+      throw new Error(
+        "GitHub returned a server error while writing data/projects.json. This usually means the synced payload is still too large for the current contents API flow."
+      );
+    }
+    throw new Error(`Push failed (${res.status}): ${(detail || "No response body.").slice(0, 180)}`);
   }
 
   const responsePayload = await res.json();
