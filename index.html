@@ -16,10 +16,23 @@
       stylesheet.href = `styles.css?v=${version}`;
       document.head.appendChild(stylesheet);
 
+      const embeddedDataScript = document.createElement("script");
+      embeddedDataScript.src = `data/projects.js?v=${version}`;
+
       const script = document.createElement("script");
       script.src = `app.js?v=${version}`;
       script.defer = true;
-      document.head.appendChild(script);
+
+      let appScriptAttached = false;
+      const attachAppScript = () => {
+        if (appScriptAttached) return;
+        appScriptAttached = true;
+        document.head.appendChild(script);
+      };
+
+      embeddedDataScript.addEventListener("load", attachAppScript, { once: true });
+      embeddedDataScript.addEventListener("error", attachAppScript, { once: true });
+      document.head.appendChild(embeddedDataScript);
     })();
   </script>
 </head>
