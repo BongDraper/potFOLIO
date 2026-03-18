@@ -35,6 +35,22 @@ const ICONS = {
       <rect x='34' y='24' width='6' height='24' fill='#ff7f50'/>
       <rect x='44' y='30' width='6' height='18' fill='#4f95ff'/>
     </svg>`),
+<<<<<<< HEAD
+=======
+  mediaPlayer:
+    "data:image/svg+xml," +
+    encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+      <defs>
+        <linearGradient id='wmp' x1='0' y1='0' x2='0' y2='1'>
+          <stop offset='0%' stop-color='#7ec4ff'/>
+          <stop offset='100%' stop-color='#2f58d1'/>
+        </linearGradient>
+      </defs>
+      <rect x='5' y='8' width='54' height='48' rx='6' fill='url(#wmp)' stroke='#12318f' stroke-width='2'/>
+      <circle cx='32' cy='32' r='13' fill='#edf4ff' opacity='0.95'/>
+      <polygon points='29,25 40,32 29,39' fill='#1f49b7'/>
+    </svg>`),
+>>>>>>> parent of f12e1a7 (Merge pull request #25 from BongDraper/codex/restore-media-player-icon)
 };
 
 const state = {
