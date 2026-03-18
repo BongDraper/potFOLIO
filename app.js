@@ -531,6 +531,16 @@ function normalizeDataPayload(payload) {
   };
 }
 
+function loadEmbeddedProjects() {
+  if (!window.__POTFOLIO_DATA__) return false;
+  const normalized = normalizeDataPayload(window.__POTFOLIO_DATA__);
+  state.projects = normalized.projects;
+  state.wallpaperUrl = normalized.wallpaperUrl;
+  state.mediaLibrary = normalized.mediaLibrary;
+  ensureMediaPlayerProject();
+  return true;
+}
+
 async function loadProjects() {
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
@@ -538,6 +548,7 @@ async function loadProjects() {
       const normalized = normalizeDataPayload(JSON.parse(local));
       state.projects = normalized.projects;
       state.wallpaperUrl = normalized.wallpaperUrl;
+      state.mediaLibrary = normalized.mediaLibrary;
       ensureMediaPlayerProject();
       return;
     } catch {
@@ -552,10 +563,14 @@ async function loadProjects() {
     const normalized = normalizeDataPayload(payload);
     state.projects = normalized.projects;
     state.wallpaperUrl = normalized.wallpaperUrl;
+    state.mediaLibrary = normalized.mediaLibrary;
     ensureMediaPlayerProject();
   } catch (error) {
-    console.error("Failed to load data/projects.json", error);
-    state.projects = [];
+    console.error("Failed to load data/projects.json, falling back to embedded data.", error);
+    if (!loadEmbeddedProjects()) {
+      state.projects = [];
+      state.mediaLibrary = [];
+    }
   }
 }
 

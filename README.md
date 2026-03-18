@@ -8,11 +8,12 @@ A static GitHub Pages portfolio that behaves like a Windows XP desktop and inclu
 - `styles.css` - XP look-and-feel and responsive fallback styles.
 - `app.js` - desktop interactions, project windows, schema guards, and CMS + GitHub API sync.
 - `data/projects.json` - source of truth project data.
+- `data/projects.js` - embedded browser fallback so the desktop still loads when `fetch()` is blocked (for example from `file://`).
 
 ## Run locally
 
 ### Option 1: open directly
-Open `index.html` in your browser.
+Open `index.html` in your browser. The site now includes an embedded `data/projects.js` fallback, so projects still render even when browsers block `fetch("data/projects.json")` from `file://`.
 
 ### Option 2: static server (recommended)
 ```bash
