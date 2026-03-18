@@ -3,7 +3,6 @@ const STORAGE_KEY = "potfolio.projects.override.v4";
 const MEDIA_DB_NAME = "potfolio-media";
 const MEDIA_STORE_NAME = "tracks";
 const MEDIA_DB_VERSION = 1;
-const MAX_GITHUB_SYNC_BYTES = 900000;
 const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
 const OPTIONAL_FIELDS = ["videoUrl", "hyperlinks", "iconUrl", "type"];
 const ROLE_NORMALIZATION_MAP = {
@@ -986,7 +985,7 @@ async function openTaskManager() {
         </div>
         <label>Windows Media files <input id="f-audio" type="file" accept="audio/*" multiple /></label>
         <button id="audio-add-btn" type="button">Load Audio Files</button>
-        <p class="small">Wallpaper is saved locally. Audio files are stored in IndexedDB to avoid browser quota errors. GitHub sync still has a practical size limit, so large tracks may need to stay local or be compressed first.</p>
+        <p class="small">Wallpaper is saved locally. Audio files are stored in IndexedDB to avoid browser quota errors, and converted only when you push to GitHub.</p>
       </section>
 
       <section class="cms-card">
@@ -1151,7 +1150,7 @@ function wireCms(win) {
       const tracks = await createLocalMediaTracks(files);
       replaceMediaLibrary(tracks);
       saveOverride();
-      setCmsMessage(msg, `Loaded ${files.length} audio file(s). Stored locally without filling localStorage. Push To Repo only works while the combined payload stays under the GitHub sync size limit.`, "ok");
+      setCmsMessage(msg, `Loaded ${files.length} audio file(s). Stored locally without filling localStorage; they will sync on Push To Repo.`, "ok");
     } catch (error) {
       setCmsMessage(msg, `Audio load failed: ${error.message}`, "error");
     }
