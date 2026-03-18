@@ -233,9 +233,9 @@ function formatByteCount(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function assertRepoSyncSize(serializedPayload) {
+function assertRepoSyncSize(serializedPayload, maxBytes = 900000) {
   const byteLength = getUtf8ByteLength(serializedPayload);
-  if (byteLength <= MAX_GITHUB_SYNC_BYTES) return byteLength;
+  if (byteLength <= maxBytes) return byteLength;
 
   throw new Error(
     `GitHub sync payload is ${formatByteCount(byteLength)}, which is too large for this contents API flow. ` +
@@ -985,7 +985,7 @@ async function openTaskManager() {
         </div>
         <label>Windows Media files <input id="f-audio" type="file" accept="audio/*" multiple /></label>
         <button id="audio-add-btn" type="button">Load Audio Files</button>
-        <p class="small">Wallpaper is saved locally. Audio files are stored in IndexedDB to avoid browser quota errors, and converted only when you push to GitHub.</p>
+        <p class="small">Wallpaper is saved locally. Audio files are stored in IndexedDB to avoid browser quota errors. GitHub sync still has a practical size limit, so large tracks may need to stay local or be compressed first.</p>
       </section>
 
       <section class="cms-card">
@@ -1150,7 +1150,7 @@ function wireCms(win) {
       const tracks = await createLocalMediaTracks(files);
       replaceMediaLibrary(tracks);
       saveOverride();
-      setCmsMessage(msg, `Loaded ${files.length} audio file(s). Stored locally without filling localStorage; they will sync on Push To Repo.`, "ok");
+      setCmsMessage(msg, `Loaded ${files.length} audio file(s). Stored locally without filling localStorage. Push To Repo only works while the combined payload stays under the GitHub sync size limit.`, "ok");
     } catch (error) {
       setCmsMessage(msg, `Audio load failed: ${error.message}`, "error");
     }

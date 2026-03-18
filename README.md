@@ -56,7 +56,7 @@ Use a Personal Access Token with repository write access:
   - `name`, `brand`, `role`, `year`, `description`
 - Missing/corrupt input is normalized with defaults so the desktop can still render.
 - Local overrides are stored in browser `localStorage` under `potfolio.projects.override.v4`.
-- Audio uploaded through Task Manager is stored in browser `IndexedDB` to avoid `localStorage` quota errors, then converted to data URLs only when you use **Push To Repo**.
+- Audio uploaded through Task Manager is stored in browser `IndexedDB` to avoid `localStorage` quota errors, then converted to data URLs only when you use **Push To Repo**. Because this app syncs through the GitHub Contents API and still reads `data/projects.json` through that same endpoint, very large embedded audio payloads may be too big to push/pull reliably; keep large tracks local or compress them first.
 
 ## Custom domain (www.maxgaudelli.com)
 
