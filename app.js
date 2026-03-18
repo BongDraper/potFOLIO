@@ -1,5 +1,8 @@
 const DATA_URL = "data/projects.json";
-const STORAGE_KEY = "potfolio.projects.override.v3";
+const STORAGE_KEY = "potfolio.projects.override.v4";
+const MEDIA_DB_NAME = "potfolio-media";
+const MEDIA_STORE_NAME = "tracks";
+const MEDIA_DB_VERSION = 1;
 const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
 const OPTIONAL_FIELDS = ["videoUrl", "hyperlinks", "iconUrl", "type"];
 const ROLE_NORMALIZATION_MAP = {
@@ -225,15 +228,200 @@ function readFileAsDataUrl(file) {
   });
 }
 
+function dataUrlToBlob(dataUrl) {
+  const [header, body] = String(dataUrl || "").split(",", 2);
+  if (!header || !body) throw new Error("Invalid audio data URL.");
+  const mimeMatch = header.match(/^data:(.*?);base64$/);
+  if (!mimeMatch) throw new Error("Unsupported audio encoding.");
+  const binary = atob(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mimeMatch[1] || "audio/mpeg" });
+}
+
+function generateTrackId(prefix = "track") {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getMediaDb() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") {
+      reject(new Error("IndexedDB is unavailable in this browser."));
+      return;
+    }
+
+    const request = indexedDB.open(MEDIA_DB_NAME, MEDIA_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(MEDIA_STORE_NAME)) {
+        db.createObjectStore(MEDIA_STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Could not open audio storage."));
+  });
+}
+
+function runStoreRequest(mode, operation) {
+  return getMediaDb().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const transaction = db.transaction(MEDIA_STORE_NAME, mode);
+        const store = transaction.objectStore(MEDIA_STORE_NAME);
+        let request;
+
+        try {
+          request = operation(store);
+        } catch (error) {
+          db.close();
+          reject(error);
+          return;
+        }
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("IndexedDB request failed."));
+        transaction.oncomplete = () => db.close();
+        transaction.onabort = () => {
+          db.close();
+          reject(transaction.error || new Error("Audio storage transaction aborted."));
+        };
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error || new Error("Audio storage transaction failed."));
+        };
+      })
+  );
+}
+
+function putTrackBlob(trackId, blob) {
+  return runStoreRequest("readwrite", (store) => store.put(blob, trackId));
+}
+
+function getTrackBlob(trackId) {
+  return runStoreRequest("readonly", (store) => store.get(trackId));
+}
+
+function deleteTrackBlob(trackId) {
+  return runStoreRequest("readwrite", (store) => store.delete(trackId));
+}
+
+function revokeMediaUrls(tracks = []) {
+  tracks.forEach((track) => {
+    if (track?.objectUrl) {
+      URL.revokeObjectURL(track.objectUrl);
+    }
+  });
+}
+
+function getTrackPlaybackUrl(track) {
+  return track?.objectUrl || track?.dataUrl || "";
+}
+
 function normalizeMediaLibrary(payload) {
   if (!Array.isArray(payload)) return [];
   return payload
-    .map((track) => ({
+    .map((track, index) => ({
+      id: typeof track?.id === "string" && track.id.trim() ? track.id.trim() : generateTrackId(`track-${index + 1}`),
       name: typeof track?.name === "string" ? track.name.trim() : "",
       dataUrl: typeof track?.dataUrl === "string" ? track.dataUrl.trim() : "",
-      type: typeof track?.type === "string" ? track.type.trim() : "audio/mpeg",
+      type: typeof track?.type === "string" && track.type.trim() ? track.type.trim() : "audio/mpeg",
+      source: track?.source === "repo" ? "repo" : "local",
     }))
-    .filter((track) => track.name && track.dataUrl);
+    .filter((track) => track.name && (track.dataUrl || track.id));
+}
+
+async function hydrateMediaTrack(track) {
+  if (track.dataUrl) {
+    const blob = dataUrlToBlob(track.dataUrl);
+    await putTrackBlob(track.id, blob);
+    return {
+      ...track,
+      source: "repo",
+      objectUrl: URL.createObjectURL(blob),
+    };
+  }
+
+  const blob = await getTrackBlob(track.id);
+  if (!blob) return null;
+  return {
+    ...track,
+    objectUrl: URL.createObjectURL(blob),
+  };
+}
+
+async function hydrateMediaLibrary(payload) {
+  const normalized = normalizeMediaLibrary(payload);
+  const hydrated = await Promise.all(normalized.map((track) => hydrateMediaTrack(track)));
+  return hydrated.filter(Boolean);
+}
+
+async function createLocalMediaTracks(files) {
+  return Promise.all(
+    files.map(async (file) => {
+      const id = generateTrackId("track");
+      await putTrackBlob(id, file);
+      return {
+        id,
+        name: file.name,
+        type: file.type || "audio/mpeg",
+        source: "local",
+        objectUrl: URL.createObjectURL(file),
+      };
+    })
+  );
+}
+
+function serializeMediaLibraryForLocal() {
+  return state.mediaLibrary.map((track) => ({
+    id: track.id,
+    name: track.name,
+    type: track.type,
+    source: track.source || "local",
+  }));
+}
+
+async function serializeMediaLibraryForRepo() {
+  return Promise.all(
+    state.mediaLibrary.map(async (track) => {
+      if (track.dataUrl) {
+        return {
+          id: track.id,
+          name: track.name,
+          type: track.type,
+          dataUrl: track.dataUrl,
+          source: "repo",
+        };
+      }
+      const blob = await getTrackBlob(track.id);
+      if (!blob) {
+        throw new Error(`Missing local audio data for ${track.name}. Reload the file and try again.`);
+      }
+      return {
+        id: track.id,
+        name: track.name,
+        type: track.type,
+        dataUrl: await readFileAsDataUrl(blob),
+        source: "repo",
+      };
+    })
+  );
+}
+
+function replaceMediaLibrary(nextTracks) {
+  const previousTracks = state.mediaLibrary;
+  revokeMediaUrls(previousTracks);
+  state.mediaLibrary = nextTracks;
+
+  previousTracks
+    .filter((track) => track?.id && !nextTracks.some((nextTrack) => nextTrack.id === track.id))
+    .forEach((track) => {
+      deleteTrackBlob(track.id).catch(() => {});
+    });
 }
 
 function setCmsMessage(node, message, kind = "") {
@@ -449,67 +637,13 @@ function openMediaPlayerWindow(projectId, project) {
     btn.addEventListener("click", () => {
       const index = Number(btn.dataset.trackIndex);
       if (Number.isNaN(index) || !tracks[index]) return;
-      audio.src = tracks[index].url;
+      audio.src = getTrackPlaybackUrl(tracks[index]);
       audio.play().catch(() => {});
     });
   });
 
   if (tracks[0]) {
-    audio.src = tracks[0].url;
-  }
-}
-
-function ensureMediaPlayerProject() {
-  const existing = state.projects.find((project) => sanitizeProject(project).type === "media-player");
-  if (!existing) {
-    state.projects.push(sanitizeProject(DEFAULT_MEDIA_PLAYER));
-  }
-}
-
-function normalizeDataPayload(payload) {
-  if (Array.isArray(payload)) {
-    return { projects: sanitizeProjectList(payload), wallpaperUrl: "" };
-  }
-  return {
-    projects: sanitizeProjectList(payload?.projects),
-    wallpaperUrl: typeof payload?.wallpaperUrl === "string" ? payload.wallpaperUrl.trim() : "",
-  };
-}
-
-function openMediaPlayerWindow(projectId, project) {
-  const tracks = state.mediaLibrary;
-  const playlist = tracks.length
-    ? `<ul class="media-playlist">${tracks
-        .map(
-          (track, idx) =>
-            `<li><button type="button" class="media-track-btn" data-track-index="${idx}">${track.name}</button></li>`
-        )
-        .join("")}</ul>`
-    : `<p class="small">No tracks loaded yet. Use Task Manager → Projects to add audio files.</p>`;
-
-  const win = createWindow(
-    `${project.name}.exe`,
-    `<div class="wmp-shell">
-      <div class="wmp-menu">File&nbsp;&nbsp;View&nbsp;&nbsp;Play&nbsp;&nbsp;Tools&nbsp;&nbsp;Help</div>
-      <div class="wmp-screen"></div>
-      <audio id="media-audio" controls preload="metadata"></audio>
-      ${playlist}
-    </div>`,
-    { key: `project-${projectId}` }
-  );
-
-  const audio = win.querySelector("#media-audio");
-  win.querySelectorAll(".media-track-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const index = Number(btn.dataset.trackIndex);
-      if (Number.isNaN(index) || !tracks[index]) return;
-      audio.src = tracks[index].dataUrl;
-      audio.play().catch(() => {});
-    });
-  });
-
-  if (tracks[0]) {
-    audio.src = tracks[0].dataUrl;
+    audio.src = getTrackPlaybackUrl(tracks[0]);
   }
 }
 
@@ -538,6 +672,7 @@ async function loadProjects() {
       const normalized = normalizeDataPayload(JSON.parse(local));
       state.projects = normalized.projects;
       state.wallpaperUrl = normalized.wallpaperUrl;
+      replaceMediaLibrary(await hydrateMediaLibrary(normalized.mediaLibrary));
       ensureMediaPlayerProject();
       return;
     } catch {
@@ -552,6 +687,7 @@ async function loadProjects() {
     const normalized = normalizeDataPayload(payload);
     state.projects = normalized.projects;
     state.wallpaperUrl = normalized.wallpaperUrl;
+    replaceMediaLibrary(await hydrateMediaLibrary(normalized.mediaLibrary));
     ensureMediaPlayerProject();
   } catch (error) {
     console.error("Failed to load data/projects.json", error);
@@ -565,7 +701,7 @@ function saveOverride() {
     JSON.stringify({
       wallpaperUrl: state.wallpaperUrl,
       projects: state.projects,
-      mediaLibrary: state.mediaLibrary,
+      mediaLibrary: serializeMediaLibraryForLocal(),
     })
   );
 }
@@ -819,7 +955,7 @@ async function openTaskManager() {
         </div>
         <label>Windows Media files <input id="f-audio" type="file" accept="audio/*" multiple /></label>
         <button id="audio-add-btn" type="button">Load Audio Files</button>
-        <p class="small">Wallpaper + media are stored and pushed together with projects.</p>
+        <p class="small">Wallpaper is saved locally. Audio files are stored in IndexedDB to avoid browser quota errors, and converted only when you push to GitHub.</p>
       </section>
 
       <section class="cms-card">
@@ -981,16 +1117,10 @@ function wireCms(win) {
     }
     setCmsMessage(msg, "Reading audio files...", "");
     try {
-      const tracks = await Promise.all(
-        files.map(async (file) => ({
-          name: file.name,
-          dataUrl: await readFileAsDataUrl(file),
-          type: file.type || "audio/mpeg",
-        }))
-      );
-      state.mediaLibrary = tracks;
+      const tracks = await createLocalMediaTracks(files);
+      replaceMediaLibrary(tracks);
       saveOverride();
-      setCmsMessage(msg, `Loaded ${files.length} audio file(s). They will sync on Push To Repo.`, "ok");
+      setCmsMessage(msg, `Loaded ${files.length} audio file(s). Stored locally without filling localStorage; they will sync on Push To Repo.`, "ok");
     } catch (error) {
       setCmsMessage(msg, `Audio load failed: ${error.message}`, "error");
     }
@@ -1047,7 +1177,7 @@ function wireCms(win) {
       if (!validation.ok) throw new Error(`Pulled data failed validation: ${validation.message}`);
       state.projects = pulled.projects;
       state.wallpaperUrl = pulled.wallpaperUrl;
-      state.mediaLibrary = pulled.mediaLibrary;
+      replaceMediaLibrary(await hydrateMediaLibrary(pulled.mediaLibrary));
       ensureMediaPlayerProject();
       saveOverride();
       refreshSelect();
@@ -1080,12 +1210,12 @@ function wireCms(win) {
       const pushed = await pushToRepo(owner, repo, branch, token, {
         wallpaperUrl: state.wallpaperUrl,
         projects: normalized,
-        mediaLibrary: state.mediaLibrary,
+        mediaLibrary: await serializeMediaLibraryForRepo(),
       });
       const pulled = await pullFromRepo(owner, repo, branch);
       state.projects = pulled.projects;
       state.wallpaperUrl = pulled.wallpaperUrl;
-      state.mediaLibrary = pulled.mediaLibrary;
+      replaceMediaLibrary(await hydrateMediaLibrary(pulled.mediaLibrary));
       ensureMediaPlayerProject();
       saveOverride();
       refreshSelect(state.cmsSelection ?? 0);
