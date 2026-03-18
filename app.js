@@ -420,6 +420,7 @@ function normalizeDataPayload(payload) {
 }
 
 async function loadProjects() {
+  await clearLegacyMediaCache();
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
     try {
