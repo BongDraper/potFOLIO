@@ -56,7 +56,7 @@ Use a Personal Access Token with repository write access:
   - `name`, `brand`, `role`, `year`, `description`
 - Missing/corrupt input is normalized with defaults so the desktop can still render.
 - Local overrides are stored in browser `localStorage` under `potfolio.projects.override.v5`.
-- Audio now uses direct links instead of uploaded files. Paste up to 10 comma-separated direct audio file/stream URLs in Task Manager; the links are stored with the projects data and sync cleanly through GitHub. Standard YouTube watch-page links will not play in the HTML audio element.
+- Audio now uses links. Paste up to 10 comma-separated audio links in Task Manager; the links are stored with the projects data and sync cleanly through GitHub.
 - Any legacy cached audio blobs in browser storage are cleared on load.
 
 ## Custom domain (www.maxgaudelli.com)

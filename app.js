@@ -331,7 +331,7 @@ async function hydrateMediaLibrary(payload) {
 function createMediaTracksFromLinks(text) {
   const links = parseMediaLinks(text);
   if (!links.length) {
-    throw new Error("Paste at least one direct audio URL first.");
+    throw new Error("Paste at least one audio link first.");
   }
   if (links.length > 10) {
     throw new Error("Load at most 10 audio links at a time.");
@@ -901,7 +901,7 @@ async function openTaskManager() {
         </div>
         <label>Audio links (comma-separated, 10 at a time) <textarea id="f-audio-links" rows="4" placeholder="https://example.com/song-1.mp3, https://example.com/song-2.mp3"></textarea></label>
         <button id="audio-links-btn" type="button">Load Audio Links</button>
-        <p class="small">File uploading and cached audio storage were removed. Paste up to 10 direct audio file/stream URLs separated by commas. Standard YouTube watch-page links will not play in the audio element.</p>
+        <p class="small">Paste up to 10 audio links separated by commas. The links will save and sync with projects.</p>
       </section>
 
       <section class="cms-card">
