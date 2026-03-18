@@ -75,7 +75,7 @@ const DEFAULT_MEDIA_PLAYER = {
   brand: "Windows XP",
   role: "Media Player",
   year: "2001",
-  description: "Drop audio files from Task Manager and play them here.",
+  description: "Paste audio links in Task Manager and play them here.",
   videoUrl: "",
   hyperlinks: "",
   iconUrl: "",
@@ -643,7 +643,7 @@ function openMediaPlayerWindow(projectId, project) {
             `<li><button type="button" class="media-track-btn" data-track-index="${idx}">${track.name}</button></li>`
         )
         .join("")}</ul>`
-    : `<p class="small">No tracks loaded yet. Use Task Manager → Projects to add audio files.</p>`;
+    : `<p class="small">No tracks loaded yet. Use Task Manager → Projects to add audio links.</p>`;
 
   const win = createWindow(
     `${project.name}.exe`,
@@ -690,6 +690,7 @@ function normalizeDataPayload(payload) {
 }
 
 async function loadProjects() {
+  await clearLegacyMediaCache();
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
     try {
@@ -1139,20 +1140,15 @@ function wireCms(win) {
     setCmsMessage(msg, "Project deleted and saved locally.", "ok");
   });
 
-  el("audio-add-btn").addEventListener("click", async () => {
-    const files = [...el("f-audio").files];
-    if (!files.length) {
-      setCmsMessage(msg, "Choose at least one audio file first.", "error");
-      return;
-    }
-    setCmsMessage(msg, "Reading audio files...", "");
+  el("audio-links-btn").addEventListener("click", () => {
+    setCmsMessage(msg, "Loading audio links...", "");
     try {
       const tracks = await createLocalMediaTracks(files);
       replaceMediaLibrary(tracks);
       saveOverride();
       setCmsMessage(msg, `Loaded ${files.length} audio file(s). Stored locally without filling localStorage. Push To Repo only works while the combined payload stays under the GitHub sync size limit.`, "ok");
     } catch (error) {
-      setCmsMessage(msg, `Audio load failed: ${error.message}`, "error");
+      setCmsMessage(msg, `Audio link load failed: ${error.message}`, "error");
     }
   });
 
