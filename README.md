@@ -55,8 +55,8 @@ Use a Personal Access Token with repository write access:
 - Project schema is enforced as:
   - `name`, `brand`, `role`, `year`, `description`
 - Missing/corrupt input is normalized with defaults so the desktop can still render.
-- Local overrides are stored in browser `localStorage` under `potfolio.projects.override.v6`.
-- The media player has been removed from the desktop and Task Manager.
+- Local overrides are stored in browser `localStorage` under `potfolio.projects.override.v4`.
+- Audio uploaded through Task Manager is stored in browser `IndexedDB` to avoid `localStorage` quota errors, then converted to data URLs only when you use **Push To Repo**.
 
 ## Custom domain (www.maxgaudelli.com)
 
