@@ -1,5 +1,5 @@
 const DATA_URL = "data/projects.json";
-const STORAGE_KEY = "potfolio.projects.override.v3";
+const STORAGE_KEY = "potfolio.projects.override.v6";
 const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
 const OPTIONAL_FIELDS = ["videoUrl", "hyperlinks", "iconUrl", "type"];
 const ROLE_NORMALIZATION_MAP = {
@@ -35,26 +35,6 @@ const ICONS = {
       <rect x='34' y='24' width='6' height='24' fill='#ff7f50'/>
       <rect x='44' y='30' width='6' height='18' fill='#4f95ff'/>
     </svg>`),
-  mediaPlayer:
-    "data:image/svg+xml," +
-    encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
-      <defs>
-        <radialGradient id='wmp-disc' cx='35%' cy='35%' r='70%'>
-          <stop offset='0%' stop-color='#8fe4ff'/>
-          <stop offset='60%' stop-color='#2398ea'/>
-          <stop offset='100%' stop-color='#0d3fbc'/>
-        </radialGradient>
-        <linearGradient id='wmp-ring' x1='0' y1='0' x2='1' y2='1'>
-          <stop offset='0%' stop-color='#ffd95c'/>
-          <stop offset='100%' stop-color='#f2861b'/>
-        </linearGradient>
-      </defs>
-      <circle cx='32' cy='32' r='25' fill='url(#wmp-disc)' stroke='#07328e' stroke-width='2'/>
-      <circle cx='32' cy='32' r='18' fill='none' stroke='url(#wmp-ring)' stroke-width='8'/>
-      <circle cx='32' cy='32' r='12' fill='#dff6ff' opacity='0.95'/>
-      <polygon points='29,25 41,32 29,39' fill='#1a56be'/>
-      <ellipse cx='24' cy='19' rx='8' ry='4' fill='#ffffff' opacity='0.2' transform='rotate(-25 24 19)'/>
-    </svg>`),
 };
 
 const state = {
@@ -64,19 +44,6 @@ const state = {
   selectedIconId: null,
   taskManagerOpening: false,
   wallpaperUrl: "",
-  mediaLibrary: [],
-};
-
-const DEFAULT_MEDIA_PLAYER = {
-  name: "Windows Media Player",
-  brand: "Windows XP",
-  role: "Media Player",
-  year: "2001",
-  description: "Drop audio files from Task Manager and play them here.",
-  videoUrl: "",
-  hyperlinks: "",
-  iconUrl: "",
-  type: "media-player",
 };
 
 const WINDOW_KEYS = {
@@ -129,7 +96,7 @@ function sanitizeProject(raw = {}) {
     safe[key] = typeof value === "string" ? value.trim() : "";
   }
 
-  if (safe.type !== "media-player") safe.type = "project";
+  safe.type = "project";
 
   const roleKey = safe.role.toLowerCase();
   safe.role = ROLE_NORMALIZATION_MAP[roleKey] || safe.role;
@@ -160,7 +127,9 @@ function parseHyperlinks(text = "") {
 
 function sanitizeProjectList(payload) {
   if (!Array.isArray(payload)) return [];
-  return payload.map((entry) => sanitizeProject(entry));
+  return payload
+    .filter((entry) => entry?.type !== "media-player")
+    .map((entry) => sanitizeProject(entry));
 }
 
 function toEmbedUrl(videoUrl) {
@@ -216,6 +185,30 @@ function decodeBase64Unicode(text) {
   return decodeURIComponent(escape(atob(text)));
 }
 
+function getUtf8ByteLength(text) {
+  if (typeof TextEncoder !== "undefined") {
+    return new TextEncoder().encode(text).length;
+  }
+  return unescape(encodeURIComponent(text)).length;
+}
+
+function formatByteCount(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function assertRepoSyncSize(serializedPayload, maxBytes = 900000) {
+  const byteLength = getUtf8ByteLength(serializedPayload);
+  if (byteLength <= maxBytes) return byteLength;
+
+  throw new Error(
+    `GitHub sync payload is ${formatByteCount(byteLength)}, which is too large for this contents API flow. ` +
+      `Reduce the number of synced items or use smaller assets before pushing.`
+  );
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -225,15 +218,11 @@ function readFileAsDataUrl(file) {
   });
 }
 
-function normalizeMediaLibrary(payload) {
-  if (!Array.isArray(payload)) return [];
-  return payload
-    .map((track) => ({
-      name: typeof track?.name === "string" ? track.name.trim() : "",
-      dataUrl: typeof track?.dataUrl === "string" ? track.dataUrl.trim() : "",
-      type: typeof track?.type === "string" ? track.type.trim() : "audio/mpeg",
-    }))
-    .filter((track) => track.name && track.dataUrl);
+function generateTrackId(prefix = "track") {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function setCmsMessage(node, message, kind = "") {
@@ -394,10 +383,6 @@ function createWindow(title, contentHtml, options = {}) {
 
 function projectWindow(project, projectId) {
   const safe = sanitizeProject(project);
-  if (safe.type === "media-player") {
-    openMediaPlayerWindow(projectId, safe);
-    return;
-  }
   const embedUrl = toEmbedUrl(safe.videoUrl);
   const links = parseHyperlinks(safe.hyperlinks);
   const media = embedUrl
@@ -422,49 +407,7 @@ function projectWindow(project, projectId) {
   );
 }
 
-function openMediaPlayerWindow(projectId, project) {
-  const tracks = state.mediaLibrary;
-  const playlist = tracks.length
-    ? `<ul class="media-playlist">${tracks
-        .map(
-          (track, idx) =>
-            `<li><button type="button" class="media-track-btn" data-track-index="${idx}">${track.name}</button></li>`
-        )
-        .join("")}</ul>`
-    : `<p class="small">No tracks loaded yet. Use Task Manager → Projects to add audio files.</p>`;
 
-  const win = createWindow(
-    `${project.name}.exe`,
-    `<div class="wmp-shell">
-      <div class="wmp-menu">File&nbsp;&nbsp;View&nbsp;&nbsp;Play&nbsp;&nbsp;Tools&nbsp;&nbsp;Help</div>
-      <div class="wmp-screen"></div>
-      <audio id="media-audio" controls preload="metadata"></audio>
-      ${playlist}
-    </div>`,
-    { key: `project-${projectId}` }
-  );
-
-  const audio = win.querySelector("#media-audio");
-  win.querySelectorAll(".media-track-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const index = Number(btn.dataset.trackIndex);
-      if (Number.isNaN(index) || !tracks[index]) return;
-      audio.src = tracks[index].url;
-      audio.play().catch(() => {});
-    });
-  });
-
-  if (tracks[0]) {
-    audio.src = tracks[0].url;
-  }
-}
-
-function ensureMediaPlayerProject() {
-  const existing = state.projects.find((project) => sanitizeProject(project).type === "media-player");
-  if (!existing) {
-    state.projects.push(sanitizeProject(DEFAULT_MEDIA_PLAYER));
-  }
-}
 
 function normalizeDataPayload(payload) {
   if (Array.isArray(payload)) {
@@ -476,61 +419,6 @@ function normalizeDataPayload(payload) {
   };
 }
 
-function openMediaPlayerWindow(projectId, project) {
-  const tracks = state.mediaLibrary;
-  const playlist = tracks.length
-    ? `<ul class="media-playlist">${tracks
-        .map(
-          (track, idx) =>
-            `<li><button type="button" class="media-track-btn" data-track-index="${idx}">${track.name}</button></li>`
-        )
-        .join("")}</ul>`
-    : `<p class="small">No tracks loaded yet. Use Task Manager → Projects to add audio files.</p>`;
-
-  const win = createWindow(
-    `${project.name}.exe`,
-    `<div class="wmp-shell">
-      <div class="wmp-menu">File&nbsp;&nbsp;View&nbsp;&nbsp;Play&nbsp;&nbsp;Tools&nbsp;&nbsp;Help</div>
-      <div class="wmp-screen"></div>
-      <audio id="media-audio" controls preload="metadata"></audio>
-      ${playlist}
-    </div>`,
-    { key: `project-${projectId}` }
-  );
-
-  const audio = win.querySelector("#media-audio");
-  win.querySelectorAll(".media-track-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const index = Number(btn.dataset.trackIndex);
-      if (Number.isNaN(index) || !tracks[index]) return;
-      audio.src = tracks[index].dataUrl;
-      audio.play().catch(() => {});
-    });
-  });
-
-  if (tracks[0]) {
-    audio.src = tracks[0].dataUrl;
-  }
-}
-
-function ensureMediaPlayerProject() {
-  const existing = state.projects.find((project) => sanitizeProject(project).type === "media-player");
-  if (!existing) {
-    state.projects.push(sanitizeProject(DEFAULT_MEDIA_PLAYER));
-  }
-}
-
-function normalizeDataPayload(payload) {
-  if (Array.isArray(payload)) {
-    return { projects: sanitizeProjectList(payload), wallpaperUrl: "", mediaLibrary: [] };
-  }
-  return {
-    projects: sanitizeProjectList(payload?.projects),
-    wallpaperUrl: typeof payload?.wallpaperUrl === "string" ? payload.wallpaperUrl.trim() : "",
-    mediaLibrary: normalizeMediaLibrary(payload?.mediaLibrary),
-  };
-}
-
 async function loadProjects() {
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
@@ -538,7 +426,6 @@ async function loadProjects() {
       const normalized = normalizeDataPayload(JSON.parse(local));
       state.projects = normalized.projects;
       state.wallpaperUrl = normalized.wallpaperUrl;
-      ensureMediaPlayerProject();
       return;
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -552,7 +439,6 @@ async function loadProjects() {
     const normalized = normalizeDataPayload(payload);
     state.projects = normalized.projects;
     state.wallpaperUrl = normalized.wallpaperUrl;
-    ensureMediaPlayerProject();
   } catch (error) {
     console.error("Failed to load data/projects.json", error);
     state.projects = [];
@@ -565,7 +451,6 @@ function saveOverride() {
     JSON.stringify({
       wallpaperUrl: state.wallpaperUrl,
       projects: state.projects,
-      mediaLibrary: state.mediaLibrary,
     })
   );
 }
@@ -589,7 +474,7 @@ function renderIcons() {
       createIcon({
         id: `project-${index}`,
         label: safe.name,
-        img: safe.type === "media-player" ? ICONS.mediaPlayer : ICONS.project,
+        img: ICONS.project,
         onOpen: () => projectWindow(safe, index),
       })
     );
@@ -678,6 +563,7 @@ async function pushToRepo(owner, repo, branch, token, payload) {
   } catch {
     throw new Error("JSON validation failed before push.");
   }
+  assertRepoSyncSize(serialized);
 
   const requestBody = {
     message: "update projects.json from Task Manager CMS",
@@ -712,8 +598,13 @@ async function pushToRepo(owner, repo, branch, token, payload) {
   }
 
   if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Push failed (${res.status}): ${detail.slice(0, 180)}`);
+    const detail = (await res.text()).trim();
+    if (res.status >= 500 && !detail) {
+      throw new Error(
+        "GitHub returned a server error while writing data/projects.json. This usually means the synced payload is still too large for the current contents API flow."
+      );
+    }
+    throw new Error(`Push failed (${res.status}): ${(detail || "No response body.").slice(0, 180)}`);
   }
 
   const responsePayload = await res.json();
@@ -802,7 +693,6 @@ async function openTaskManager() {
         <label>Hyperlinks (one URL per line or comma-separated) <textarea id="f-links" rows="3" placeholder="https://..."></textarea></label>
         <div class="cms-actions">
           <button id="new-btn">Add Project</button>
-          <button id="new-wmp-btn">Add Windows Media Player</button>
           <button id="save-btn">Save Edit</button>
           <button id="delete-btn">Delete</button>
           <button id="local-btn">Save Local</button>
@@ -811,15 +701,13 @@ async function openTaskManager() {
       </section>
 
       <section class="cms-card">
-        <h3>Project Assets (push with projects)</h3>
+        <h3>Project Assets</h3>
         <label>Wallpaper image file <input id="wallpaper-file" type="file" accept="image/*" /></label>
         <div class="cms-actions">
           <button id="wallpaper-apply-btn">Apply Wallpaper File</button>
           <button id="wallpaper-clear-btn">Use Default Wallpaper</button>
         </div>
-        <label>Windows Media files <input id="f-audio" type="file" accept="audio/*" multiple /></label>
-        <button id="audio-add-btn" type="button">Load Audio Files</button>
-        <p class="small">Wallpaper + media are stored and pushed together with projects.</p>
+        <p class="small">Media player support has been removed. This panel now only manages the desktop wallpaper.</p>
       </section>
 
       <section class="cms-card">
@@ -925,20 +813,6 @@ function wireCms(win) {
     setCmsMessage(msg, "Project added and saved locally.", "ok");
   });
 
-  el("new-wmp-btn").addEventListener("click", () => {
-    const existing = state.projects.findIndex((project) => sanitizeProject(project).type === "media-player");
-    if (existing !== -1) {
-      refreshSelect(existing);
-      setCmsMessage(msg, "Windows Media Player already exists.", "error");
-      return;
-    }
-    state.projects.push(sanitizeProject(DEFAULT_MEDIA_PLAYER));
-    refreshSelect(state.projects.length - 1);
-    renderIcons();
-    saveOverride();
-    setCmsMessage(msg, "Windows Media Player added.", "ok");
-  });
-
   el("save-btn").addEventListener("click", () => {
     if (state.cmsSelection == null) {
       setCmsMessage(msg, "No project selected.", "error");
@@ -961,39 +835,11 @@ function wireCms(win) {
       setCmsMessage(msg, "No project selected.", "error");
       return;
     }
-    const selected = sanitizeProject(state.projects[state.cmsSelection]);
-    if (selected.type === "media-player") {
-      setCmsMessage(msg, "Windows Media Player cannot be deleted.", "error");
-      return;
-    }
     state.projects.splice(state.cmsSelection, 1);
     refreshSelect(state.cmsSelection - 1);
     renderIcons();
     saveOverride();
     setCmsMessage(msg, "Project deleted and saved locally.", "ok");
-  });
-
-  el("audio-add-btn").addEventListener("click", async () => {
-    const files = [...el("f-audio").files];
-    if (!files.length) {
-      setCmsMessage(msg, "Choose at least one audio file first.", "error");
-      return;
-    }
-    setCmsMessage(msg, "Reading audio files...", "");
-    try {
-      const tracks = await Promise.all(
-        files.map(async (file) => ({
-          name: file.name,
-          dataUrl: await readFileAsDataUrl(file),
-          type: file.type || "audio/mpeg",
-        }))
-      );
-      state.mediaLibrary = tracks;
-      saveOverride();
-      setCmsMessage(msg, `Loaded ${files.length} audio file(s). They will sync on Push To Repo.`, "ok");
-    } catch (error) {
-      setCmsMessage(msg, `Audio load failed: ${error.message}`, "error");
-    }
   });
 
   el("wallpaper-apply-btn").addEventListener("click", async () => {
@@ -1047,8 +893,6 @@ function wireCms(win) {
       if (!validation.ok) throw new Error(`Pulled data failed validation: ${validation.message}`);
       state.projects = pulled.projects;
       state.wallpaperUrl = pulled.wallpaperUrl;
-      state.mediaLibrary = pulled.mediaLibrary;
-      ensureMediaPlayerProject();
       saveOverride();
       refreshSelect();
       renderIcons();
@@ -1080,13 +924,10 @@ function wireCms(win) {
       const pushed = await pushToRepo(owner, repo, branch, token, {
         wallpaperUrl: state.wallpaperUrl,
         projects: normalized,
-        mediaLibrary: state.mediaLibrary,
       });
       const pulled = await pullFromRepo(owner, repo, branch);
       state.projects = pulled.projects;
       state.wallpaperUrl = pulled.wallpaperUrl;
-      state.mediaLibrary = pulled.mediaLibrary;
-      ensureMediaPlayerProject();
       saveOverride();
       refreshSelect(state.cmsSelection ?? 0);
       renderIcons();
