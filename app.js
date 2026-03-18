@@ -89,13 +89,27 @@ const REPO_DEFAULTS = {
   branch: "main",
 };
 
-const desktop = document.getElementById("desktop");
-const desktopIcons = document.getElementById("desktop-icons");
-const selectionBox = document.getElementById("selection-box");
-const windowLayer = document.getElementById("window-layer");
-const taskItems = document.getElementById("task-items");
-const clock = document.getElementById("clock");
-const startButton = document.getElementById("start-button");
+let desktop;
+let desktopIcons;
+let selectionBox;
+let windowLayer;
+let taskItems;
+let clock;
+let startButton;
+
+function cacheDomNodes() {
+  desktop = document.getElementById("desktop");
+  desktopIcons = document.getElementById("desktop-icons");
+  selectionBox = document.getElementById("selection-box");
+  windowLayer = document.getElementById("window-layer");
+  taskItems = document.getElementById("task-items");
+  clock = document.getElementById("clock");
+  startButton = document.getElementById("start-button");
+
+  if (!desktop || !desktopIcons || !selectionBox || !windowLayer || !taskItems || !clock || !startButton) {
+    throw new Error("Desktop UI failed to initialize because required DOM nodes were not found.");
+  }
+}
 
 const ABOUT_ME_TEXT = {
   name: "Maximiliano Gaudelli",
@@ -214,6 +228,30 @@ function encodeBase64Unicode(text) {
 
 function decodeBase64Unicode(text) {
   return decodeURIComponent(escape(atob(text)));
+}
+
+function getUtf8ByteLength(text) {
+  if (typeof TextEncoder !== "undefined") {
+    return new TextEncoder().encode(text).length;
+  }
+  return unescape(encodeURIComponent(text)).length;
+}
+
+function formatByteCount(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function assertRepoSyncSize(serializedPayload, maxBytes = 900000) {
+  const byteLength = getUtf8ByteLength(serializedPayload);
+  if (byteLength <= maxBytes) return byteLength;
+
+  throw new Error(
+    `GitHub sync payload is ${formatByteCount(byteLength)}, which is too large for this contents API flow. ` +
+      `Reduce the number of synced items or use smaller assets before pushing.`
+  );
 }
 
 function readFileAsDataUrl(file) {
@@ -678,6 +716,7 @@ async function pushToRepo(owner, repo, branch, token, payload) {
   } catch {
     throw new Error("JSON validation failed before push.");
   }
+  assertRepoSyncSize(serialized);
 
   const requestBody = {
     message: "update projects.json from Task Manager CMS",
@@ -712,8 +751,13 @@ async function pushToRepo(owner, repo, branch, token, payload) {
   }
 
   if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Push failed (${res.status}): ${detail.slice(0, 180)}`);
+    const detail = (await res.text()).trim();
+    if (res.status >= 500 && !detail) {
+      throw new Error(
+        "GitHub returned a server error while writing data/projects.json. This usually means the synced payload is still too large for the current contents API flow."
+      );
+    }
+    throw new Error(`Push failed (${res.status}): ${(detail || "No response body.").slice(0, 180)}`);
   }
 
   const responsePayload = await res.json();
@@ -1221,6 +1265,7 @@ function startClock() {
 }
 
 async function init() {
+  cacheDomNodes();
   await loadProjects();
   applyWallpaper();
   renderIcons();
@@ -1230,4 +1275,14 @@ async function init() {
   wireDesktopSelectionRectangle();
 }
 
-init();
+function bootApp() {
+  init().catch((error) => {
+    console.error("Desktop initialization failed", error);
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootApp, { once: true });
+} else {
+  bootApp();
+}
