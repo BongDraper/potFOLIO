@@ -1,6 +1,8 @@
 const DATA_URL = "data/projects.json";
-const STORAGE_KEY = "potfolio.projects.override.v5";
+const STORAGE_KEY = "potfolio.projects.override.v4";
 const MEDIA_DB_NAME = "potfolio-media";
+const MEDIA_STORE_NAME = "tracks";
+const MEDIA_DB_VERSION = 1;
 const REQUIRED_FIELDS = ["name", "brand", "role", "year", "description"];
 const OPTIONAL_FIELDS = ["videoUrl", "hyperlinks", "iconUrl", "type"];
 const ROLE_NORMALIZATION_MAP = {
@@ -237,7 +239,7 @@ function assertRepoSyncSize(serializedPayload, maxBytes = 900000) {
 
   throw new Error(
     `GitHub sync payload is ${formatByteCount(byteLength)}, which is too large for this contents API flow. ` +
-      `Reduce the number of synced items or use smaller assets before pushing.`
+      `Keep the audio local only, remove some tracks, or use shorter/compressed files before pushing.`
   );
 }
 
@@ -250,6 +252,19 @@ function readFileAsDataUrl(file) {
   });
 }
 
+function dataUrlToBlob(dataUrl) {
+  const [header, body] = String(dataUrl || "").split(",", 2);
+  if (!header || !body) throw new Error("Invalid audio data URL.");
+  const mimeMatch = header.match(/^data:(.*?);base64$/);
+  if (!mimeMatch) throw new Error("Unsupported audio encoding.");
+  const binary = atob(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Blob([bytes], { type: mimeMatch[1] || "audio/mpeg" });
+}
+
 function generateTrackId(prefix = "track") {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -257,21 +272,66 @@ function generateTrackId(prefix = "track") {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function clearLegacyMediaCache() {
-  revokeMediaUrls(state.mediaLibrary);
-  state.mediaLibrary = [];
-
-  return new Promise((resolve) => {
+function getMediaDb() {
+  return new Promise((resolve, reject) => {
     if (typeof indexedDB === "undefined") {
-      resolve();
+      reject(new Error("IndexedDB is unavailable in this browser."));
       return;
     }
 
-    const request = indexedDB.deleteDatabase(MEDIA_DB_NAME);
-    request.onsuccess = () => resolve();
-    request.onerror = () => resolve();
-    request.onblocked = () => resolve();
+    const request = indexedDB.open(MEDIA_DB_NAME, MEDIA_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(MEDIA_STORE_NAME)) {
+        db.createObjectStore(MEDIA_STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Could not open audio storage."));
   });
+}
+
+function runStoreRequest(mode, operation) {
+  return getMediaDb().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const transaction = db.transaction(MEDIA_STORE_NAME, mode);
+        const store = transaction.objectStore(MEDIA_STORE_NAME);
+        let request;
+
+        try {
+          request = operation(store);
+        } catch (error) {
+          db.close();
+          reject(error);
+          return;
+        }
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("IndexedDB request failed."));
+        transaction.oncomplete = () => db.close();
+        transaction.onabort = () => {
+          db.close();
+          reject(transaction.error || new Error("Audio storage transaction aborted."));
+        };
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error || new Error("Audio storage transaction failed."));
+        };
+      })
+  );
+}
+
+function putTrackBlob(trackId, blob) {
+  return runStoreRequest("readwrite", (store) => store.put(blob, trackId));
+}
+
+function getTrackBlob(trackId) {
+  return runStoreRequest("readonly", (store) => store.get(trackId));
+}
+
+function deleteTrackBlob(trackId) {
+  return runStoreRequest("readwrite", (store) => store.delete(trackId));
 }
 
 function revokeMediaUrls(tracks = []) {
@@ -283,33 +343,7 @@ function revokeMediaUrls(tracks = []) {
 }
 
 function getTrackPlaybackUrl(track) {
-  return track?.url || "";
-}
-
-function parseMediaLinks(text = "") {
-  return text
-    .split(/\n|,/) 
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .filter((entry) => {
-      try {
-        const parsed = new URL(entry);
-        return parsed.protocol === "http:" || parsed.protocol === "https:";
-      } catch {
-        return false;
-      }
-    });
-}
-
-function getTrackNameFromUrl(url) {
-  try {
-    const parsed = new URL(url);
-    const segment = parsed.pathname.split("/").filter(Boolean).pop();
-    if (segment) return decodeURIComponent(segment);
-    return parsed.hostname;
-  } catch {
-    return url;
-  }
+  return track?.objectUrl || track?.dataUrl || "";
 }
 
 function normalizeMediaLibrary(payload) {
@@ -317,50 +351,101 @@ function normalizeMediaLibrary(payload) {
   return payload
     .map((track, index) => ({
       id: typeof track?.id === "string" && track.id.trim() ? track.id.trim() : generateTrackId(`track-${index + 1}`),
-      name: typeof track?.name === "string" && track.name.trim() ? track.name.trim() : getTrackNameFromUrl(track?.url || ""),
-      url: typeof track?.url === "string" ? track.url.trim() : "",
+      name: typeof track?.name === "string" ? track.name.trim() : "",
+      dataUrl: typeof track?.dataUrl === "string" ? track.dataUrl.trim() : "",
       type: typeof track?.type === "string" && track.type.trim() ? track.type.trim() : "audio/mpeg",
+      source: track?.source === "repo" ? "repo" : "local",
     }))
-    .filter((track) => track.name && track.url);
+    .filter((track) => track.name && (track.dataUrl || track.id));
+}
+
+async function hydrateMediaTrack(track) {
+  if (track.dataUrl) {
+    const blob = dataUrlToBlob(track.dataUrl);
+    await putTrackBlob(track.id, blob);
+    return {
+      ...track,
+      source: "repo",
+      objectUrl: URL.createObjectURL(blob),
+    };
+  }
+
+  const blob = await getTrackBlob(track.id);
+  if (!blob) return null;
+  return {
+    ...track,
+    objectUrl: URL.createObjectURL(blob),
+  };
 }
 
 async function hydrateMediaLibrary(payload) {
-  return normalizeMediaLibrary(payload);
+  const normalized = normalizeMediaLibrary(payload);
+  const hydrated = await Promise.all(normalized.map((track) => hydrateMediaTrack(track)));
+  return hydrated.filter(Boolean);
 }
 
-function createMediaTracksFromLinks(text) {
-  const links = parseMediaLinks(text);
-  if (!links.length) {
-    throw new Error("Paste at least one audio link first.");
-  }
-  if (links.length > 10) {
-    throw new Error("Load at most 10 audio links at a time.");
-  }
-
-  return links.map((url, index) => ({
-    id: generateTrackId(`track-${index + 1}`),
-    name: getTrackNameFromUrl(url),
-    url,
-    type: "audio/mpeg",
-  }));
+async function createLocalMediaTracks(files) {
+  return Promise.all(
+    files.map(async (file) => {
+      const id = generateTrackId("track");
+      await putTrackBlob(id, file);
+      return {
+        id,
+        name: file.name,
+        type: file.type || "audio/mpeg",
+        source: "local",
+        objectUrl: URL.createObjectURL(file),
+      };
+    })
+  );
 }
 
 function serializeMediaLibraryForLocal() {
   return state.mediaLibrary.map((track) => ({
     id: track.id,
     name: track.name,
-    url: track.url,
     type: track.type,
+    source: track.source || "local",
   }));
 }
 
-function serializeMediaLibraryForRepo() {
-  return serializeMediaLibraryForLocal();
+async function serializeMediaLibraryForRepo() {
+  return Promise.all(
+    state.mediaLibrary.map(async (track) => {
+      if (track.dataUrl) {
+        return {
+          id: track.id,
+          name: track.name,
+          type: track.type,
+          dataUrl: track.dataUrl,
+          source: "repo",
+        };
+      }
+      const blob = await getTrackBlob(track.id);
+      if (!blob) {
+        throw new Error(`Missing local audio data for ${track.name}. Reload the file and try again.`);
+      }
+      return {
+        id: track.id,
+        name: track.name,
+        type: track.type,
+        dataUrl: await readFileAsDataUrl(blob),
+        source: "repo",
+      };
+    })
+  );
 }
 
 function replaceMediaLibrary(nextTracks) {
-  revokeMediaUrls(state.mediaLibrary);
+  const previousTracks = state.mediaLibrary;
+  revokeMediaUrls(previousTracks);
   state.mediaLibrary = nextTracks;
+
+  previousTracks
+    .filter((track) => track?.id && !nextTracks.some((nextTrack) => nextTrack.id === track.id))
+    .forEach((track) => {
+      deleteTrackBlob(track.id).catch(() => {});
+    });
 }
 
 function setCmsMessage(node, message, kind = "") {
@@ -792,7 +877,7 @@ async function pushToRepo(owner, repo, branch, token, payload) {
     const detail = (await res.text()).trim();
     if (res.status >= 500 && !detail) {
       throw new Error(
-        "GitHub returned a server error while writing data/projects.json. This usually means the synced payload is still too large for the current contents API flow."
+        "GitHub returned a server error while writing data/projects.json. This usually means the embedded audio payload is too large for the current contents API sync flow."
       );
     }
     throw new Error(`Push failed (${res.status}): ${(detail || "No response body.").slice(0, 180)}`);
@@ -899,9 +984,9 @@ async function openTaskManager() {
           <button id="wallpaper-apply-btn">Apply Wallpaper File</button>
           <button id="wallpaper-clear-btn">Use Default Wallpaper</button>
         </div>
-        <label>Audio links (comma-separated, 10 at a time) <textarea id="f-audio-links" rows="4" placeholder="https://example.com/song-1.mp3, https://example.com/song-2.mp3"></textarea></label>
-        <button id="audio-links-btn" type="button">Load Audio Links</button>
-        <p class="small">Paste up to 10 audio links separated by commas. The links will save and sync with projects.</p>
+        <label>Windows Media files <input id="f-audio" type="file" accept="audio/*" multiple /></label>
+        <button id="audio-add-btn" type="button">Load Audio Files</button>
+        <p class="small">Wallpaper is saved locally. Audio files are stored in IndexedDB to avoid browser quota errors. GitHub sync still has a practical size limit, so large tracks may need to stay local or be compressed first.</p>
       </section>
 
       <section class="cms-card">
@@ -1058,10 +1143,10 @@ function wireCms(win) {
   el("audio-links-btn").addEventListener("click", () => {
     setCmsMessage(msg, "Loading audio links...", "");
     try {
-      const tracks = createMediaTracksFromLinks(el("f-audio-links").value);
+      const tracks = await createLocalMediaTracks(files);
       replaceMediaLibrary(tracks);
       saveOverride();
-      setCmsMessage(msg, `Loaded ${tracks.length} audio link(s). They will save and sync with projects.`, "ok");
+      setCmsMessage(msg, `Loaded ${files.length} audio file(s). Stored locally without filling localStorage. Push To Repo only works while the combined payload stays under the GitHub sync size limit.`, "ok");
     } catch (error) {
       setCmsMessage(msg, `Audio link load failed: ${error.message}`, "error");
     }
@@ -1151,7 +1236,7 @@ function wireCms(win) {
       const pushed = await pushToRepo(owner, repo, branch, token, {
         wallpaperUrl: state.wallpaperUrl,
         projects: normalized,
-        mediaLibrary: serializeMediaLibraryForRepo(),
+        mediaLibrary: await serializeMediaLibraryForRepo(),
       });
       const pulled = await pullFromRepo(owner, repo, branch);
       state.projects = pulled.projects;
