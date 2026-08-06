@@ -112,17 +112,6 @@
       "type": "project"
     },
     {
-      "name": "Windows Media Player",
-      "brand": "Windows XP",
-      "role": "Media Player",
-      "year": "2001",
-      "description": "Drop audio files from Task Manager and play them here.",
-      "videoUrl": "",
-      "hyperlinks": "",
-      "iconUrl": "",
-      "type": "media-player"
-    },
-    {
       "name": "World Cup 2026 ft. David Beckham",
       "brand": "Verizon",
       "role": "Senior Creative",
@@ -133,6 +122,5 @@
       "iconUrl": "",
       "type": "project"
     }
-  ],
-  "mediaLibrary": []
+  ]
 }
