@@ -16,11 +16,6 @@
       stylesheet.href = `styles.css?v=${version}`;
       document.head.appendChild(stylesheet);
 
-      const notesStylesheet = document.createElement("link");
-      notesStylesheet.rel = "stylesheet";
-      notesStylesheet.href = `recommendations.css?v=${version}`;
-      document.head.appendChild(notesStylesheet);
-
       const embeddedDataScript = document.createElement("script");
       embeddedDataScript.src = `data/projects.js?v=${version}`;
 
@@ -44,40 +39,6 @@
 <body>
   <main id="desktop" aria-label="Windows XP desktop">
     <div id="desktop-icons" class="icon-grid" aria-label="Desktop icons"></div>
-    <aside class="recommendations" aria-label="Recommendations">
-      <figure class="recommendation-note">
-        <figcaption><button type="button" class="recommendation-open" aria-haspopup="dialog"><strong>Kelly Jenkins</strong><span>Group Creative Director at Dentsu Creative</span><span class="recommendation-hint">Read note</span></button></figcaption>
-        <blockquote hidden aria-label="Recommendation from Kelly Jenkins">
-          <p>Max is a creative ninja. Helpful in all the ways you need, weird in all the ways you want. He very quickly became the go-to writer on an account with wild demands and even more wild timelines. Truly making the work on that side of the brand his own. But my favorite part about Max is that he's relentless. Last minute pivots, requests for yet another way at the problem — he's game for it all. And does it with humor, grace, and a positive energy that's infectious. To his team, to his clients, to the work he brings to the table. Will forever remain excited to see what he does next.</p>
-        </blockquote>
-      </figure>
-      <figure class="recommendation-note">
-        <figcaption><button type="button" class="recommendation-open" aria-haspopup="dialog"><strong>Angie Roby</strong><span>Group Account Director at Artists&amp;Outlaws</span><span class="recommendation-hint">Read note</span></button></figcaption>
-        <blockquote hidden aria-label="Recommendation from Angie Roby">
-          <p>I had the pleasure of working closely with Maximiliano Gaudelli on the T-Mobile account, where he served as Associate Creative Director. Max is not only an exceptionally talented creative leader but also a true partner in bringing big ideas to life, strategically, collaboratively, and under real pressure.</p>
-          <p>Throughout our time together, Max consistently demonstrated a sharp instinct for storytelling, a deep understanding of the brand, and the ability to translate complex briefs into powerful, effective creative. He’s particularly skilled at navigating fast-paced campaign cycles without ever compromising the craft or the strategy.</p>
-          <p>What I appreciated most was his collaborative spirit. Max brought calm, focus, and inspiration to every meeting, always open to input and laser-focused on producing the best work possible. He worked seamlessly with our account, production, and strategy teams, helping us push the creative forward while staying on-brand and on-brief.</p>
-          <p>Max is the kind of creative you want in the room. Strategic, thoughtful, and driven by both results and heart. Any team would be lucky to have him.</p>
-        </blockquote>
-      </figure>
-      <figure class="recommendation-note">
-        <figcaption><button type="button" class="recommendation-open" aria-haspopup="dialog"><strong>Luciano “Chany” D’Amelio</strong><span>VP Creative Ogilvy Mexico &amp; Miami</span><span class="recommendation-hint">Read note</span></button></figcaption>
-        <blockquote hidden aria-label="Recommendation from Luciano Chany D’Amelio">
-          <p>Max is a passionate creative always trying to innovate and generate the freshest ideas.</p>
-          <p>He is the kind of copy that is really hard to find nowadays.</p>
-          <p>He has a vast knowledge of technology that he implements very well in his daily task.</p>
-          <p>Overall Max is a great human being always trying to help and improve the work, super responsible and willing to learn and succeed.</p>
-        </blockquote>
-      </figure>
-      <figure class="recommendation-note">
-        <figcaption><button type="button" class="recommendation-open" aria-haspopup="dialog"><strong>George Sugitomo</strong><span>Executive Creative Director at Ogilvy Tokyo</span><span class="recommendation-hint">Read note</span></button></figcaption>
-        <blockquote hidden aria-label="Recommendation from George Sugitomo">
-          <p>It is with much enthusiasm that I recommend Maximiliano Gaudelli for inclusion in your creative team.</p>
-          <p>Max was part of our internship program at the Ogilvy Tokyo office when I was an ECD there at the time. Ideating on many projects from Coca-Cola brand campaigns to creating digital platforms for our global partner Asics. In all of the projects we had, Max displayed a high level of creativity and analytical thought that is quite rare among young creatives his age.</p>
-          <p>His ideation skills are broad and unique and a rare find even in a crowded creative market such as Japan. Max was always eager to upgrade his skill sets even beyond what he offers, and was absorbing new techniques from his colleagues whenever he had the luxury. He was always cheerful and willing to assist with any task. In addition, Max was motivated to learn which makes a huge difference for any young creative.</p>
-        </blockquote>
-      </figure>
-    </aside>
     <div id="selection-box" aria-hidden="true"></div>
     <section id="window-layer" aria-live="polite"></section>
   </main>
