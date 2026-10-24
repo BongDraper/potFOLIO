@@ -466,6 +466,21 @@ function renderIcons() {
       onOpen: openTaskManager,
     })
   );
+  if (window.Minesweeper) {
+    const gameIcon = createIcon({
+      id: "minesweeper",
+      label: "Minesweeper",
+      img: window.Minesweeper.icon,
+      onOpen: () => window.Minesweeper.open(createWindow, windowLayer, bringToFront),
+    });
+    // Touch screens have no conventional desktop double-click gesture.
+    gameIcon.addEventListener("pointerup", (event) => {
+      if (event.pointerType === "touch") {
+        window.Minesweeper.open(createWindow, windowLayer, bringToFront);
+      }
+    });
+    desktopIcons.appendChild(gameIcon);
+  }
   deselectDesktopIcons();
 }
 
