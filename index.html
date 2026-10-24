@@ -16,12 +16,20 @@
       stylesheet.href = `styles.css?v=${version}`;
       document.head.appendChild(stylesheet);
 
+      const gameStylesheet = document.createElement("link");
+      gameStylesheet.rel = "stylesheet";
+      gameStylesheet.href = `minesweeper.css?v=${version}`;
+      document.head.appendChild(gameStylesheet);
+
       const embeddedDataScript = document.createElement("script");
       embeddedDataScript.src = `data/projects.js?v=${version}`;
 
       const script = document.createElement("script");
       script.src = `app.js?v=${version}`;
       script.defer = true;
+
+      const gameScript = document.createElement("script");
+      gameScript.src = `minesweeper.js?v=${version}`;
 
       let appScriptAttached = false;
       const attachAppScript = () => {
@@ -30,8 +38,16 @@
         document.head.appendChild(script);
       };
 
-      embeddedDataScript.addEventListener("load", attachAppScript, { once: true });
-      embeddedDataScript.addEventListener("error", attachAppScript, { once: true });
+      let gameScriptAttached = false;
+      const attachGameScript = () => {
+        if (gameScriptAttached) return;
+        gameScriptAttached = true;
+        document.head.appendChild(gameScript);
+      };
+      gameScript.addEventListener("load", attachAppScript, { once: true });
+      gameScript.addEventListener("error", attachAppScript, { once: true });
+      embeddedDataScript.addEventListener("load", attachGameScript, { once: true });
+      embeddedDataScript.addEventListener("error", attachGameScript, { once: true });
       document.head.appendChild(embeddedDataScript);
     })();
   </script>
