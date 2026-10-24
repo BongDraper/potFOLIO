@@ -21,6 +21,19 @@ python3 -m http.server 4173
 ```
 Then open `http://localhost:4173`.
 
+## Minesweeper
+
+Double-click the **Minesweeper** desktop icon (or focus it and press Enter) to play a classic 9×9 board with 10 mines. On touch screens, tap the icon once.
+
+- Click a square to reveal it. The first reveal is safe.
+- Right-click or press **F** to flag a square; the **Flag** toggle also works on touch screens.
+- Use the arrow keys to move around the board and Enter or Space to reveal a square.
+- Reveal every safe square to win. Click the smiley to start a new game.
+
+The game lives in `minesweeper.js` and `minesweeper.css`, uses the existing XP windows/taskbar, and needs no build step or external service.
+
+Run its game-rule tests with `node --test tests/minesweeper.test.cjs`.
+
 ## Deploy to GitHub Pages
 
 1. Commit changes to the `main` branch.
