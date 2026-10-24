@@ -933,7 +933,7 @@ function wireDesktopSelectionRectangle() {
   let dragStart = null;
 
   desktop.addEventListener("mousedown", (event) => {
-    if (event.target.closest(".desktop-icon") || event.target.closest(".xp-window")) return;
+    if (event.target.closest(".desktop-icon, .xp-window, .recommendations")) return;
     deselectDesktopIcons();
     dragStart = { x: event.clientX, y: event.clientY };
     selectionBox.style.display = "block";
