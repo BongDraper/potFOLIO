@@ -1,4 +1,4 @@
-/* Desktop-only sticky notes; the portfolio's tablet/mobile layout stays clear. */
+/* Small desktop shortcuts; full recommendations open in an XP window. */
 .recommendations {
   display: none;
 }
@@ -6,85 +6,103 @@
 @media screen and (min-width: 1025px) {
   .recommendations {
     position: absolute;
-    top: 24px;
+    top: 28px;
     right: 28px;
-    width: min(620px, calc(100% - 300px));
+    width: 246px;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(2, 112px);
+    gap: 18px 22px;
   }
 
   .recommendation-note {
     --note-color: #fff2a8;
     margin: 0;
-    padding: 24px 18px 18px;
-    height: clamp(220px, calc((100dvh - 140px) / 2), 340px);
-    display: flex;
-    flex-direction: column;
-    color: #302a22;
-    background: linear-gradient(180deg, #0000000c 0 20px, transparent 20px), var(--note-color);
-    box-shadow: 3px 6px 12px #0003;
-    transform: rotate(-2deg);
-    font-family: "Segoe Print", "Bradley Hand", cursive;
-    user-select: text;
+    transform: rotate(-3deg);
   }
 
   .recommendation-note:nth-child(2) {
     --note-color: #ffd8df;
-    transform: rotate(2deg);
+    transform: rotate(3deg);
   }
 
   .recommendation-note:nth-child(3) {
     --note-color: #dcedb9;
-    transform: rotate(1deg);
+    transform: rotate(2deg);
   }
 
   .recommendation-note:nth-child(4) {
     --note-color: #d4eafa;
-    transform: rotate(-1.5deg);
+    transform: rotate(-2deg);
   }
 
-  .recommendation-note figcaption {
-    margin-bottom: 12px;
-  }
-
-  .recommendation-note strong,
-  .recommendation-note figcaption span {
-    display: block;
-  }
-
-  .recommendation-note strong {
-    font-size: 16px;
-  }
-
-  .recommendation-note figcaption span {
-    margin-top: 4px;
+  .recommendation-open {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 112px;
+    height: 112px;
+    padding: 13px 9px 8px;
+    border: 0;
+    color: #302a22;
+    text-align: left;
     font-family: Tahoma, sans-serif;
+    background: linear-gradient(180deg, #0000000c 0 9px, transparent 9px), var(--note-color);
+    box-shadow: 2px 3px 6px #0003;
+    cursor: pointer;
+  }
+
+  .recommendation-open strong {
     font-size: 11px;
-    line-height: 1.4;
+    line-height: 1.2;
   }
 
-  /* Keep every recommendation complete, with mouse and keyboard scrolling. */
-  .recommendation-note blockquote {
-    min-height: 0;
-    overflow: auto;
-    margin: 0;
-    padding: 2px 8px 2px 2px;
-    font-size: 14px;
-    line-height: 1.6;
-    scrollbar-width: thin;
+  .recommendation-open span {
+    margin-top: 5px;
+    font-size: 9px;
+    line-height: 1.25;
   }
 
-  .recommendation-note blockquote:focus-visible {
+  .recommendation-open .recommendation-hint {
+    margin-top: auto;
+    font-size: 9px;
+  }
+
+  .recommendation-open:hover {
+    box-shadow: 3px 5px 9px #0005;
+  }
+
+  .recommendation-open:focus-visible {
     outline: 2px solid #302a22;
-    outline-offset: 2px;
+    outline-offset: 3px;
   }
+}
 
-  .recommendation-note p {
-    margin: 0 0 12px;
-  }
+.recommendation-window .window-content {
+  user-select: text;
+}
 
-  .recommendation-note p:last-child {
-    margin-bottom: 0;
+.recommendation-full h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.recommendation-role {
+  margin: 0 0 20px;
+  font-size: 12px;
+}
+
+.recommendation-full blockquote {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.recommendation-full blockquote p {
+  margin: 0 0 14px;
+}
+
+@media (max-width: 1024px), print {
+  .recommendation-window {
+    display: none;
   }
 }
