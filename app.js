@@ -933,7 +933,7 @@ function wireDesktopSelectionRectangle() {
   let dragStart = null;
 
   desktop.addEventListener("mousedown", (event) => {
-    if (event.target.closest(".desktop-icon, .xp-window, .recommendations")) return;
+    if (event.target.closest(".desktop-icon") || event.target.closest(".xp-window")) return;
     deselectDesktopIcons();
     dragStart = { x: event.clientX, y: event.clientY };
     selectionBox.style.display = "block";
@@ -1024,33 +1024,6 @@ function wireStartMenu() {
   });
 }
 
-function wireRecommendations() {
-  document.querySelectorAll(".recommendation-open").forEach((button, index) => {
-    button.addEventListener("click", () => {
-      const note = button.closest(".recommendation-note");
-      const name = button.querySelector("strong").textContent;
-      const title = button.querySelector("span").textContent;
-      const content = document.createElement("div");
-      content.className = "recommendation-full";
-      const heading = document.createElement("h2");
-      heading.textContent = name;
-      const role = document.createElement("p");
-      role.className = "recommendation-role";
-      role.textContent = title;
-      const quote = note.querySelector("blockquote").cloneNode(true);
-      quote.hidden = false;
-      content.append(heading, role, quote);
-      const win = createWindow(`Recommendation — ${name}`, content.outerHTML, {
-        key: `recommendation-${index}`,
-        onClose: () => button.focus(),
-      });
-      win.classList.add("recommendation-window");
-      win.setAttribute("aria-label", `Recommendation from ${name}`);
-      win.querySelector(".close-btn").focus();
-    });
-  });
-}
-
 function startClock() {
   const tick = () => {
     clock.textContent = new Date().toLocaleTimeString([], {
@@ -1069,7 +1042,6 @@ async function init() {
   renderTaskbar();
   startClock();
   wireStartMenu();
-  wireRecommendations();
   wireDesktopSelectionRectangle();
 }
 
